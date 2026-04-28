@@ -1,0 +1,7 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^todolist\.Rmd$
+^todolist\.html$
+^\.positai$
+^\.claude$
