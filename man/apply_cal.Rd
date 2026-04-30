@@ -8,15 +8,22 @@ apply_cal(
   A_sens,
   S = diag(ncol(A_sens)),
   M = diag(ncol(A_sens)),
+  R = diag(ncol(A_sens)),
   b = rep(0, ncol(A_sens))
 )
 }
 \arguments{
-\item{A_sens}{Input accelerometry data}
+\item{A_sens}{Input accelerometry data with axes as columns and samples as
+rows. See details.}
 
-\item{S}{The scale factor matrix (can be provided as a vector)}
+\item{S}{The scale factor diagonal matrix (can be provided as a vector)}
 
 \item{M}{The misalignment matrix}
+
+\item{R}{A rotation matrix to account for a sensor mounted "flipped"
+around one or two axes (e.g. a collar mounted backwards).
+Can be provided as diagonal matrix or numeric vector of 1s and -1s,
+or a character vector or character string of axes to flip around.}
 
 \item{b}{The bias vector}
 }
@@ -29,17 +36,19 @@ An \code{accelerometry} object containing the calibrated data
 Apply calibration to raw data
 }
 \details{
-The accelerometer data model used follows:
+The sensor data model used is:
 
-\deqn{A_{sens} = S M A_{true} + b}
+\deqn{A_{sens} = S M R A_{true} + b}
 
 where \eqn{A_{sens}} is the column vector of raw signal recorded by the
 sensor, \eqn{A_{true}} is the true acceleration in the orthogonal reference
 frame, \eqn{S} is a diagonal matrix of scale factors, \eqn{M} is the
-misalignment matrix, and \eqn{b} is the bias vector. Solving for
-\eqn{A_{true}} gives the calibration equation:
+misalignment matrix, \eqn{R} is a rotation matrix accounting for 180 degrees
+rotations of the sensor around one or two axes,
+and \eqn{b} is the bias vector. Solving for \eqn{A_{true}}
+gives the calibration equation:
 
-\deqn{A_{true} = M^{-1} S^{-1} (A_{sens} - b)}
+\deqn{A_{true} = R^{-1} M^{-1} S^{-1} (A_{sens} - b)}
 In the triaxial case and with \eqn{n} samples, \eqn{A_{true}} and
 \eqn{A_{sens}} are matrices of dimensions \eqn{3 \times n}, where rows
 represent axes (x, y, z) and columns represent samples. However,
@@ -47,5 +56,5 @@ as is customary, data is expected with samples as rows and axes as
 columns (i.e. \eqn{A_{sens}^T}). The function therefore solves for
 \eqn{A_{true}} in its transposed form:
 
-\deqn{A_{true}^T = (A_{sens}^T - b^T) S^{-1} (M^{-1})^T}
+\deqn{A_{true}^T = (A_{sens}^T - b^T) S^{-1} (M^{-1})^T R}
 }
