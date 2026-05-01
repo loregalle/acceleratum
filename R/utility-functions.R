@@ -130,7 +130,7 @@
 
 #' Safe asin
 #'
-#' Clamp scalar to [-1, 1] before asin to avoid NaN due to floating point errors
+#' Clamp scalar to \[-1, 1\] before asin to avoid NaN due to floating point errors
 #'
 #' @param x A scalar.
 #' @return asin

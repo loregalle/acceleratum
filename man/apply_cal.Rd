@@ -29,8 +29,8 @@ or a character vector or character string of axes to flip around.}
 }
 \value{
 An \code{accelerometry} object containing the calibrated data
-  \eqn{A_{true}^T}, with the same dimensions and - if available -
-  sampling rate and start time as the input \code{A_sens}.
+\eqn{A_{true}^T}, with the same dimensions and - if available -
+sampling rate and start time as the input \code{A_sens}.
 }
 \description{
 Apply calibration to raw data

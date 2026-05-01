@@ -53,51 +53,51 @@ and start_time, a POSIXct or numeric marking the beginning of the recording.
 }
 \details{
 \code{aclrtm_accelerometry} is a utility class that can be used to
-  work with (tri)axial accelerometry data in a consistent fashion within the
-  \code{acceleratum} package. The constructor function
-  \code{accelerometry()} can accept input data (argument \code{x})
-  as either a numeric vector, a numeric matrix, or a data frame.
+work with (tri)axial accelerometry data in a consistent fashion within the
+\code{acceleratum} package. The constructor function
+\code{accelerometry()} can accept input data (argument \code{x})
+as either a numeric vector, a numeric matrix, or a data frame.
 
-  If \code{x} is a vector and the argument \code{axes} is provided,
-  \code{x} is assumed to be ordered in multiplets according to the number
-  of axes specified. E.g. given a vector of length \eqn{n \cdot 3} and
-  \code{axes = "xyz"}, the input vector will be assumed to be arranged as
-  \eqn{\left(x_1, y_1, z_1, x_2, y_2, z_2, \ldots, x_n, y_n, z_n\right)}.
+If \code{x} is a vector and the argument \code{axes} is provided,
+\code{x} is assumed to be ordered in multiplets according to the number
+of axes specified. E.g. given a vector of length \eqn{n \cdot 3} and
+\code{axes = "xyz"}, the input vector will be assumed to be arranged as
+\eqn{\left(x_1, y_1, z_1, x_2, y_2, z_2, \ldots, x_n, y_n, z_n\right)}.
 
-  If \code{x} is a matrix, each row is assumed to be an observation and
-  columns are assumed to be the axes. Effectively, when the input is
-  a matrix, \code{accelerometry()} will run a few sanity checks and
-  return the same data structure with attached attributes (if provided).
-  If the argument \code{axes} was provided and column names were
-  already present, \code{axes} takes precedence and throws a warning.
+If \code{x} is a matrix, each row is assumed to be an observation and
+columns are assumed to be the axes. Effectively, when the input is
+a matrix, \code{accelerometry()} will run a few sanity checks and
+return the same data structure with attached attributes (if provided).
+If the argument \code{axes} was provided and column names were
+already present, \code{axes} takes precedence and throws a warning.
 
-  If \code{x} is a data frame and argument \code{time_col} has been provided,
-  \code{start_time} and \code{sampling_rate} will be estimated from
-  \code{time_col}. \code{time_col} also takes precedence over
-  \code{start_time} (if provided), but not over \code{sampling_rate}
-  (if provided). If more than 3 numeric columns (excluding \code{time_col})
-  are present in \code{x}, the argument \code{axes} must be provided and
-  those columns must be present in \code{x}.
-  With 3 or fewer numeric columns, column names will be retained if they are
-  a subset of \code{c("x", "y", "z")} or overridden (with warning).
+If \code{x} is a data frame and argument \code{time_col} has been provided,
+\code{start_time} and \code{sampling_rate} will be estimated from
+\code{time_col}. \code{time_col} also takes precedence over
+\code{start_time} (if provided), but not over \code{sampling_rate}
+(if provided). If more than 3 numeric columns (excluding \code{time_col})
+are present in \code{x}, the argument \code{axes} must be provided and
+those columns must be present in \code{x}.
+With 3 or fewer numeric columns, column names will be retained if they are
+a subset of \code{c("x", "y", "z")} or overridden (with warning).
 
-  As accelerometry data can often be large, an object of class
-  \code{"aclrtm_accelerometry"} does not store the vector of timestamps.
-  Instead, attributes \code{start_time} and \code{sampling_rate} can be
-  provided and timestamps will be estimated as needed within the
-  \code{acceleratum} package. We feel that this is a good enough
-  approach for the purposes of this package. That is: calibration and
-  standardization of observations, tasks that can be performed
-  without knowledge of timestamps. However, this comes at the cost of
-  ignoring possible timing drift for the logger device. If that is of
-  concern to the user, we recommend two approaches:
-  \enumerate{
-    \item If memory allows, most functions within the \code{acceleratum}
-      package work with data frames as input and a time_col specification
-      (as needed).
-    \item It might be preferred to store the timestamp vector elsewhere
-      to have it re-added to the data once most operations are performed.
-  }
+As accelerometry data can often be large, an object of class
+\code{"aclrtm_accelerometry"} does not store the vector of timestamps.
+Instead, attributes \code{start_time} and \code{sampling_rate} can be
+provided and timestamps will be estimated as needed within the
+\code{acceleratum} package. We feel that this is a good enough
+approach for the purposes of this package. That is: calibration and
+standardization of observations, tasks that can be performed
+without knowledge of timestamps. However, this comes at the cost of
+ignoring possible timing drift for the logger device. If that is of
+concern to the user, we recommend two approaches:
+\enumerate{
+\item If memory allows, most functions within the \code{acceleratum}
+package work with data frames as input and a time_col specification
+(as needed).
+\item It might be preferred to store the timestamp vector elsewhere
+to have it re-added to the data once most operations are performed.
+}
 }
 \examples{
 # vector as input

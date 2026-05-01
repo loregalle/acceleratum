@@ -16,7 +16,11 @@
 #'   (start and end row indices for the range).
 #' @details
 #' Use the plotly tools to zoom in and out. Use the box select tool to
-#' highlight a range by click and drag.
+#' highlight a range by click and drag. This function is designed to be used
+#' as a step in bench calibration of devices. Large amounts of data
+#' (most deployment situations) might be slow to plot or cause errors. In such
+#' cases, consider downsampling (e.g. with [downsample()]).
+#' @seealso [downsample()], [cal_xu()]
 #'
 #' @export
 range_select <- function(acc, axes = NULL, annot = NULL, ...) {
@@ -197,31 +201,6 @@ range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
 
     # Plot
     output$plot <- plotly::renderPlotly({
-      rng <- ranges()
-
-      shapes <- lapply(seq_len(nrow(rng)), function(i) {
-        r <- rng[i,]
-        list(type = "rect",
-             x0 = r$xmin,
-             x1 = r$xmax,
-             y0 = 0,
-             y1 = 1,
-             yref = "paper",
-             fillcolor = "rgba(255, 165, 0, 0.25)",
-             line  = list(color = "darkorange", width = 1.5),
-             layer = "below")
-      })
-
-      annots <- lapply(seq_len(nrow(rng)), function(i) {
-        r <- rng[i,]
-        list(x = (r$xmin + r$xmax) / 2,
-             y = 1,
-             yref = "paper",
-             text = r$label,
-             showarrow = FALSE,
-             font = list(size = 11, color = "darkorange"),
-             xanchor = "center", yanchor = "bottom")
-      })
 
       p <- plotly::plot_ly(type = "scatter",
                            mode = "lines+markers",
@@ -258,8 +237,6 @@ range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
           selectdirection = "h",
           xaxis           = list(title = x_label),
           yaxis           = list(title = y_label),
-          shapes          = if (length(shapes) > 0) shapes else list(),
-          annotations     = if (length(annots)  > 0) annots  else list(),
           showlegend      = TRUE,
           legend          = list(x = 1, y = 1,
                                  xanchor = "right",
@@ -269,8 +246,46 @@ range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
         plotly::config(scrollZoom = TRUE)
     })
 
+    shiny::observe({
+      rng <- ranges()
+
+      shapes <- lapply(seq_len(nrow(rng)), function(i) {
+        r <- rng[i,]
+        list(type = "rect",
+             x0 = r$xmin,
+             x1 = r$xmax,
+             y0 = 0,
+             y1 = 1,
+             yref = "paper",
+             fillcolor = "rgba(255, 165, 0, 0.25)",
+             line  = list(color = "darkorange", width = 1.5),
+             layer = "below")
+      })
+
+      annots <- lapply(seq_len(nrow(rng)), function(i) {
+        r <- rng[i,]
+        list(x = (r$xmin + r$xmax) / 2,
+             y = 1,
+             yref = "paper",
+             text = r$label,
+             showarrow = FALSE,
+             font = list(size = 11, color = "darkorange"),
+             xanchor = "center", yanchor = "bottom")
+      })
+
+      plotly::plotlyProxyInvoke(
+        plotly::plotlyProxy("plot", session),
+        "relayout",
+        list(
+          shapes      = shapes,
+          annotations = annots
+        )
+      )
+    }) |>
+      shiny::bindEvent(ranges())
+
     # Box-select event - modal prompt
-    shiny::observeEvent(plotly::event_data("plotly_brushed"), {
+    shiny::observe({
       d <- plotly::event_data("plotly_brushed")
       if (is.null(d) || is.null(d$x)) return()
 
@@ -294,16 +309,45 @@ range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
           shiny::actionButton("confirm_btn", "Capture", class = "btn-primary")
         )
       ))
-    })
+    }) |>
+      shiny::bindEvent(plotly::event_data("plotly_brushed"))
+
+    shiny::observe({
+      d <- plotly::event_data("plotly_brushed")
+      if (is.null(d) || is.null(d$x)) return()
+
+      xmin <- min(d$x)
+      xmax <- max(d$x)
+      pending_sel(list(xmin = xmin, xmax = xmax))
+
+      shiny::showModal(shiny::modalDialog(
+        title = "Capture this range?",
+        shiny::p(shiny::strong("X range detected:")),
+        shiny::p(sprintf("%.4f  -  %.4f", xmin, xmax),
+                 style = "font-family:monospace; font-size:15px; color:#0066cc;"),
+
+        shiny::hr(),
+
+        shiny::textInput("range_label", "Label for this range:",
+                         placeholder = "Write here..."),
+
+        footer = shiny::tagList(
+          shiny::actionButton("cancel_btn", "Cancel"),
+          shiny::actionButton("confirm_btn", "Capture", class = "btn-primary")
+        )
+      ))
+    }) |>
+      shiny::bindEvent(plotly::event_data("plotly_brushed"))
 
     # Cancel button
-    shiny::observeEvent(input$cancel_btn, {
+    shiny::observe({
       shinyjs::runjs("Plotly.relayout('plot', {'selections': []})")
       shiny::removeModal()
-    })
+    }) |>
+      shiny::bindEvent(input$cancel_btn)
 
     # Confirm label - store range
-    shiny::observeEvent(input$confirm_btn, {
+    shiny::observe({
       sel <- pending_sel()
       if (is.null(sel)) { shiny::removeModal(); return() }
 
@@ -329,17 +373,20 @@ range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
       ranges(current)
 
       shiny::removeModal()
-    })
+    }) |>
+      shiny::bindEvent(input$confirm_btn)
 
     # Clear
-    shiny::observeEvent(input$clear_btn, { ranges(data.frame(label = character(),
-                                                             xmin = double(),
-                                                             xmax = double())) })
+    shiny::observe({
+      ranges(data.frame(label = character(),
+                        xmin = double(),
+                        xmax = double()))
+    }) |>
+      shiny::bindEvent(input$clear_btn)
 
     # Done: stop the app and return ranges to R
-    shiny::observeEvent(input$done_btn, {
-      shiny::stopApp(returnValue = ranges())
-    })
+    shiny::observe({ shiny::stopApp(returnValue = ranges()) }) |>
+      shiny::bindEvent(input$done_btn)
 
     # Live display
     output$ranges_display <- shiny::renderPrint({

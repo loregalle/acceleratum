@@ -13,7 +13,7 @@ sphere_filter(acc, r = 1.05)
 }
 \value{
 A Boolean vector that identifies all samples with a vector length
-  lower than \code{r}
+lower than \code{r}
 }
 \description{
 Identify samples of a (triaxial) sensor data that describe a vector

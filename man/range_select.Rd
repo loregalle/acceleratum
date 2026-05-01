@@ -24,8 +24,8 @@ follow the same structure as the output of this same function.}
 }
 \value{
 A data.frame of (labeled) ranges with columns: label,
-  xmin and xmax (start and end time as shown on the plot), imin and imax
-  (start and end row indices for the range).
+xmin and xmax (start and end time as shown on the plot), imin and imax
+(start and end row indices for the range).
 }
 \description{
 Opens an interactive Shiny app that relies on a plotly device to let the
@@ -33,5 +33,11 @@ user select and label x-axis ranges.
 }
 \details{
 Use the plotly tools to zoom in and out. Use the box select tool to
-highlight a range by click and drag.
+highlight a range by click and drag. This function is designed to be used
+as a step in bench calibration of devices. Large amounts of data
+(most deployment situations) might be slow to plot or cause errors. In such
+cases, consider downsampling (e.g. with \code{\link[=downsample]{downsample()}}).
+}
+\seealso{
+\code{\link[=downsample]{downsample()}}, \code{\link[=cal_xu]{cal_xu()}}
 }

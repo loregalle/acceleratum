@@ -20,5 +20,5 @@ An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 \description{
 Wraps a numeric matrix in the "aclrtm_accelerometry" class and attaches
 optional metadata attributes.  Intended for internal use or for developers;
-for interactive use, call [accelerometry()].
+for interactive use, call \code{\link[=accelerometry]{accelerometry()}}.
 }

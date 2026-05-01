@@ -21,14 +21,14 @@ See details.}
 \value{
 A named list with elements:
 \describe{
-  \item{S}{Vector of scaling factors}
-  \item{M}{Misalignment matrix}
-  \item{bias}{Vector of biases}
-  \item{seg_means}{List of segment means per annotation}
-  \item{iters}{Number of iterations performed}
-  \item{e0_hist}{Numeric vector of max parameter change per iteration}
-  \item{params_xu}{List of estimated parameters as named in
-    Xu et al. (2021)}
+\item{S}{Vector of scaling factors}
+\item{M}{Misalignment matrix}
+\item{bias}{Vector of biases}
+\item{seg_means}{List of segment means per annotation}
+\item{iters}{Number of iterations performed}
+\item{e0_hist}{Numeric vector of max parameter change per iteration}
+\item{params_xu}{List of estimated parameters as named in
+Xu et al. (2021)}
 }
 }
 \description{
