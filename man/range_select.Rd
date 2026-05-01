@@ -5,9 +5,9 @@
 \alias{range_select.matrix}
 \title{Select and annotate accelerometry bursts}
 \usage{
-range_select(acc, axes = NULL, ...)
+range_select(acc, axes = NULL, annot = NULL, ...)
 
-\method{range_select}{matrix}(acc, axes = NULL, ...)
+\method{range_select}{matrix}(acc, axes = NULL, annot = NULL, ...)
 }
 \arguments{
 \item{acc}{An object of class \code{accelerometry}, \code{matrix}, or
@@ -17,10 +17,21 @@ range_select(acc, axes = NULL, ...)
 "z" (e.g. "xyz", "xz", "y") or \code{NULL}. Columns must be present in
 \code{acc}.}
 
+\item{annot}{A data.frame of previously collected (labeled) ranges. It needs
+follow the same structure as the output of this same function.}
+
 \item{...}{passed on to methods}
 }
+\value{
+A data.frame of (labeled) ranges with columns: label,
+  xmin and xmax (start and end time as shown on the plot), imin and imax
+  (start and end row indices for the range).
+}
 \description{
-A function that opens an interactive Shiny app, lets the
-user select named x-axis ranges, and returns them as a
-list when the app is closed.
+Opens an interactive Shiny app that relies on a plotly device to let the
+user select and label x-axis ranges.
+}
+\details{
+Use the plotly tools to zoom in and out. Use the box select tool to
+highlight a range by click and drag.
 }

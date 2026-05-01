@@ -1,23 +1,31 @@
 #' Select and annotate accelerometry bursts
 #'
-#' A function that opens an interactive Shiny app, lets the
-#' user select named x-axis ranges, and returns them as a
-#' list when the app is closed.
+#' Opens an interactive Shiny app that relies on a plotly device to let the
+#' user select and label x-axis ranges.
 #'
 #' @param acc An object of class \code{accelerometry}, \code{matrix}, or
 #'   \code{data.frame}
 #' @param axes A string composed of any non-repeating combination of "x", "y",
 #'   "z" (e.g. "xyz", "xz", "y") or \code{NULL}. Columns must be present in
 #'   \code{acc}.
+#' @param annot A data.frame of previously collected (labeled) ranges. It needs
+#'   follow the same structure as the output of this same function.
 #' @param ... passed on to methods
+#' @return A data.frame of (labeled) ranges with columns: label,
+#'   xmin and xmax (start and end time as shown on the plot), imin and imax
+#'   (start and end row indices for the range).
+#' @details
+#' Use the plotly tools to zoom in and out. Use the box select tool to
+#' highlight a range by click and drag.
+#'
 #' @export
-range_select <- function(acc, axes = NULL, ...) {
+range_select <- function(acc, axes = NULL, annot = NULL, ...) {
   UseMethod("range_select")
 }
 
 #' @export
 #' @rdname range_select
-range_select.matrix <- function(acc, axes = NULL, ...) {
+range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
 
   # Check for shiny and plotly
   if (!requireNamespace("shiny", quietly = TRUE)) {
@@ -54,6 +62,14 @@ range_select.matrix <- function(acc, axes = NULL, ...) {
          dim(acc)[1L],
          ".",
          call. = FALSE)
+  }
+
+  if (!is.null(annot)) {
+    if (!is.data.frame(annot) ||
+        !all(colnames(annot) %in% c("label", "xmin", "xmax", "imin", "imax"))) {
+      stop("`annot` must be a data frame of previously taken annotations and ",
+           "it must have columns: label, xmin, xmax, imin, imax.")
+    }
   }
 
   # Get attributes
@@ -167,9 +183,16 @@ range_select.matrix <- function(acc, axes = NULL, ...) {
   # Server
   server <- function(input, output, session) {
 
-    ranges      <- shiny::reactiveVal(data.frame(label = character(),
-                                                 xmin = double(),
-                                                 xmax = double()))
+    ranges      <- if (!is.null(annot)) {
+      shiny::reactiveVal(annot)
+    } else {
+      shiny::reactiveVal(data.frame(label = character(),
+                                    xmin = double(),
+                                    xmax = double(),
+                                    imin = integer(),
+                                    imax = integer()))
+    }
+
     pending_sel <- shiny::reactiveVal(NULL)
 
     # Plot
