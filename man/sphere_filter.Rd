@@ -16,6 +16,6 @@ A Boolean vector that identifies all samples with a vector length
 lower than \code{r}
 }
 \description{
-Identify samples of a (triaxial) sensor data that describe a vector
-higher than a set length.
+Identifies samples of a (triaxial) sensor data matrix that describe a vector
+longer than a set length.
 }
