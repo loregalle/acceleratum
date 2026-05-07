@@ -145,3 +145,53 @@
 }
 
 # Rotation ----
+#' Rodrigues' rotation formula
+#'
+#' Uses Rodrigues' rotation formula to find the rotation matrix that rotates
+#' the first input vector to be aligned with the second input vector.
+#'
+#' @param from A vector.
+#' @param to A vector.
+#' @return A rotation matrix \code{R} such as \code{R %*% from}
+#'   equals \code{to}
+#' @noRd
+.rodrigues_rotation <- function(from, to) {
+  # normalise
+  from <- from / sqrt(sum(from^2))
+  to   <- to   / sqrt(sum(to^2))
+
+  # cross product: rotation vector
+  k <- c(
+    from[c(2L,3L,1L)] * to[c(3L, 1L, 2L)] -
+      from[c(3L, 1L, 2L)] * to[c(2L,3L,1L)]
+  )
+  # sin theta via cross product
+  sin_theta <- sqrt(sum(k^2))
+
+  # cos theta via dot product
+  cos_theta <- as.vector(from %*% to)
+
+  if (sin_theta < 0) {        # if parallel
+    if (cos_theta > 0) {      # if codirectional
+      return(diag(3L))        # R is the identity
+    }
+    # if not codirectional, 180 degree rotation
+    seed_vec <- ifelse(        # use some simple logic to pick any
+      abs(from[1L]) < 0.9,     # vector different enough from "from"
+      c(1,0,0),
+      c(0,1,0)
+    )
+    k <- seed_vec - sum(perp * from) * from # orthogonalisation
+    k <- k / sqrt(sum(v^2))                 # normalisation
+    return(2 * outer(k, k) - diag(3))       # solving Rodrigues with theta = pi
+  }
+
+  # skew-symmetric cross product matrix
+  k <- k/sin_theta
+  K <- diag(0,3)
+  K_offdiag <- k[c(3,2,3,1,2,1)] * c(1,-1,-1,1,1,-1)
+  K[row(K) != col(K)] <- K_offdiag
+
+  # Rodrigues formula
+  diag(3L) + sin_theta * K + (1-cos_theta) * K %*% K
+}
