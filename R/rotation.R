@@ -12,7 +12,11 @@
 #' @param normalise Logical. If \code{TRUE} (default), the density is
 #'   normalised by multiplying it by \eqn{\frac{C_p(\mathbf{\kappa})}{n}}.
 #'   Else, the sum is returned. See details.
-#' @return A data frame.
+#' @param weights Observation weights. Either a single number or a
+#'   vector, recycled to \code{nrow(m)} length.
+#' @param norm_filter Minimum vector length. Observations that define
+#'   lower vector lengths (i.e. Euclidean norms) are filtered out.
+#' @returns A data frame.
 #' @details
 #' The probability density function of the von Mises–Fisher distribution for
 #' the vector \eqn{\mathbf{x}} in \eqn{p} dimensions is:
@@ -30,19 +34,37 @@
 #' and calculates the kernel density estimate at each one of them.
 #'
 #' @export
-vmf_kde <- function(m, n_grid = 1000L, kappa = 4, normalise = TRUE) {
+vmf_kde <- function(m,
+                    n_grid = 1000L,
+                    kappa = 4,
+                    normalise = TRUE,
+                    weights = 1,
+                    norm_filter = 1e-10) {
 
   if (!inherits(m, "matrix") || !ncol(m) %in% c(2, 3)) {
-    stop("Input m must be a matrix and have either 2 or 3 columns.",
+    stop("Input m must be a matrix-like object and have either 2 or 3 columns.",
          call. = FALSE)
   }
   if (!all(colnames(m) %in% c("x", "y", "z"))) {
-    stop("Input matrix m must have named columns x, y, and/or z.")
+    stop("Input matrix m must have named columns x, y, and/or z.",
+         call. = FALSE)
+  }
+  if (!is.numeric(weights) || !is.vector(weights)) {
+    stop("'weights' can only be a numeric vector")
+  }
+  if (nrow(m) %% length(weights) != 0) {
+    stop("'weights' cannot be recycled to nrow(m) length.",
+         call. = FALSE)
   }
 
   p <- ncol(m)
   norms <- sqrt(rowSums(m^2))
-  unit_vec  <- m / norms
+  unit_vec <- m / norms
+  unit_vec <- unit_vec[norms >= norm_filter,]
+  if (length(weights) > 1) {
+    weights <- rep(weights, length.out = nrow(m))
+    weights <- weights[norms >= norm_filter]
+  }
 
   if (p == 3) {
     golden <- (1 + sqrt(5)) / 2
@@ -63,7 +85,8 @@ vmf_kde <- function(m, n_grid = 1000L, kappa = 4, normalise = TRUE) {
     )
   }
 
-  density <- rowSums(exp(kappa * (grid %*% t(unit_vec))))
+  density <- colSums(weights * exp(kappa * (unit_vec %*% t(grid))))
+
   if (normalise) {
     numer <- kappa^(p/2 - 1)
     denom <- ((2*pi)^(p/2)) * besselI(kappa, p/2 - 1)
@@ -76,3 +99,272 @@ vmf_kde <- function(m, n_grid = 1000L, kappa = 4, normalise = TRUE) {
   as.data.frame(out)
 }
 
+#' Rotation matrix
+#'
+#' Return a rotation matrix that aligns the density peak in the sample to
+#' the a specified direction.
+#'
+#' @param m matrix
+#' @param align_to placeholder
+#' @param align_secondary placeholder
+#' @param secondary_policy Policy for the alignment of the secondary axis.
+#'   Ignored if \code{secondary_policy} is \code{NULL}. See details.
+#' @param fixed_ax placeholder
+#' @param n_grid passed to [vmf_kde()]. If null, defaults to 5000 for the 3D
+#'   case and 1000 for the 2D case.
+#' @param ... other arguments passed to [vmf_kde()]
+#' @returns Rotation matrix
+#' @export
+rotation_to_align <- function(m,
+                              align_to,
+                              align_secondary = NULL,
+                              secondary_policy = c("max", "min"),
+                              fixed_ax = NULL,
+                              n_grid = NULL,
+                              ...) {
+  secondary_policy <- match.arg(secondary_policy)
+  if (!inherits(m, "matrix") || !ncol(m) %in% c(2, 3)) {
+    stop("Input m must be a matrix-like object and have either 2 or 3 columns.",
+         call. = FALSE)
+  }
+  if (is.null(colnames(m)) || !all(colnames(m) %in% c("x", "y", "z"))) {
+    stop("Input matrix m must have named columns x, y, and/or z.")
+  }
+  cn <- colnames(m)
+  if (!is.null(fixed_ax)) {
+    if (ncol(m) == 2) {
+      message("'fixed_ax' is ignored when m is a 2-column matrix",
+              call. = F)
+    } else {
+      if (!is.character(fixed_ax) ||
+          length(fixed_ax) != 1 ||
+          !fixed_ax %in% c("x", "y", "z") ||
+          !fixed_ax %in% cn) {
+        stop(
+          "'fixed_ax' must be either NULL or a character string of length ",
+          "one: 'x', 'y', or 'z'. The axis must be present as a column in ",
+          "'m'.",
+          call. = F
+        )
+      }
+      rot_ax <- setdiff(cn, fixed_ax)
+    }
+  } else {
+    rot_ax <- cn
+  }
+
+  n_ax <- length(rot_ax)
+
+  if (!is.null(align_secondary) && n_ax == 2) {
+    message("'align_secondary' is ignored in the two-dimensional case.")
+    align_secondary <- NULL
+  }
+
+  # align_to processing ----
+  if (is.character(align_to)) {
+    if(length(align_to) != 1) {
+      stop("'align_to' must be of length 1 when provided as a character string",
+           call. = FALSE)
+    }
+    align_to <- .canon_face(align_to)
+    if (is.na(align_to)) {
+      stop("Invalid 'align_to' argument.", call. = FALSE)
+    }
+    align_to_ax <- substr(align_to, 2,2)
+    align_to_sy <- substr(align_to, 1,1)
+
+    if (!is.null(fixed_ax) && align_to_ax == fixed_ax) {
+      stop("'fixed_ax' can't be the same axis defined in 'align_to'",
+           call. = FALSE)
+    }
+
+    align_to <- rep(0,n_ax)
+    names(align_to) <- rot_ax
+    align_to[align_to_ax] <- ifelse(align_to_sy == "+", 1, -1)
+  }
+  if (is.numeric(align_to)) {
+    if (length(align_to) != length(rot_ax)) {
+      stop("When provided as a numeric vector, the length of 'align_to' (",
+           length(align_to),
+           ") must match the dimensionality of the rotation (",
+           length(rot_ax),
+           ").",
+           call. = FALSE)
+    }
+    if (is.null(names(align_to))) {
+      names(align_to) <- rot_ax
+    }
+    align_to <- align_to/sqrt(sum(align_to^2))
+  } else {
+    stop("'align_to' must be either a numeric vector of length equal to ",
+         "the number of columns of 'm' or a character string of length 1",
+         call. = FALSE)
+  }
+
+  # align_secondary processing ----
+  if (!is.null(align_secondary)) {
+    if (is.character(align_secondary)) {
+      if(length(align_secondary) != 1) {
+        stop("'align_secondary' must be of length 1 when provided as a ",
+             "character string",
+             call. = FALSE)
+      }
+      align_secondary <- .canon_face(align_secondary)
+      if (is.na(align_secondary)) {
+        stop("Invalid 'align_secondary' argument.", call. = FALSE)
+      }
+      align_secondary_ax <- substr(align_secondary, 2,2)
+      align_secondary_sy <- substr(align_secondary, 1,1)
+
+      if (exists("align_to_ax") && align_to_ax == align_secondary_ax) {
+        stop("'align_to' and 'align_secondary' cannot be parallel.")
+      }
+
+      align_secondary <- rep(0,n_ax)
+      names(align_secondary) <- rot_ax
+      align_secondary[align_secondary_ax] <- ifelse(
+        align_secondary_sy == "+", 1, -1
+      )
+    }
+    if (is.numeric(align_secondary)) {
+      if (length(align_secondary) != length(rot_ax)) {
+        stop("When provided as a numeric vector, the length of ",
+             "'align_secondary' (",
+             length(align_secondary),
+             ") must match the dimensionality of the rotation (",
+             length(rot_ax),
+             ").",
+             call. = FALSE)
+      }
+      if (is.null(names(align_secondary))) {
+        names(align_secondary) <- rot_ax
+      }
+
+      align_secondary <- align_secondary / sqrt(sum(align_secondary^2))
+      proj_secondary <- .gram_schmidt(align_secondary, align_to)
+      sin_theta <- sqrt(sum(proj_secondary^2))
+
+      if (sin_theta < 1e-10) {
+        stop(
+          "'align_to' and 'align_secondary' are parallel.",
+          call. = F
+        )
+      }
+
+      if (sin_theta < sin(pi/4)) {
+        warning(
+          "'align_secondary' is within 45 degrees of 'align_to', ",
+          "the secondary alignment may be unreliable.",
+          call. = FALSE
+        )
+      }
+      proj_secondary <- proj_secondary / sin_theta
+    } else {
+      stop("'align_secondary' must be either a numeric vector of length equal ",
+           "to the number of columns of 'm' or a character string of length 1",
+           call. = FALSE)
+    }
+  }
+
+  if (is.null(n_grid)) {
+    n_grid <- ifelse(n_ax == 3, 5000, 1000)
+  }
+
+  # find directional density. On the sphere if 3D, on the circle if 2D.
+  dens <- vmf_kde(m[,rot_ax], n_grid = n_grid, ...)
+  dens_peak <- as.matrix(
+    dens[which.max(dens$density), rot_ax]
+  )[1,]
+
+  if (!is.null(align_secondary)) {
+    # This branch goes only in the 3D case and align_secondary defined
+    # Finds the direction to align the secondary axis to.
+    # first, project the density sphere grid onto the plane perpendicular
+    # to the axis defined by dens_peak
+    dens_proj <- .gram_schmidt(as.matrix(dens[, rot_ax]),
+                               matrix(dens_peak, nrow(dens),
+                                      3,
+                                      byrow = TRUE))
+    colnames(dens_proj) <- rot_ax
+
+    # calculate the vector lengths
+    proj_lengths <- sqrt(rowSums(dens_proj^2))
+
+    # To use vmf_kde I need to restrict to 2D, which means I need to
+    # work on the plane perpendicular to dens_peak.
+    # Conveniently, dens_proj are all vectors orthogonal to dens_peak.
+    # so I can use any of these and then find the 2nd axis of the plane
+    # by cross product. For safety, I will pick the longest vector
+    u <- dens_proj[which.max(proj_lengths), ]
+    u <- u/sqrt(sum(u^2))
+    v <- .cross(dens_peak, u)
+    # now that the new 2D reference system is defined, get all vectors
+    # in dens_proj into this new reference
+    proj_2d <- dens_proj %*% unname(cbind(u,v))
+    colnames(proj_2d) <- c("x", "y") # add names just because vmf_kde requires
+    # compute densities. Use vector lengths as weights
+    dens2 <- vmf_kde(proj_2d,
+                     weights = proj_lengths,
+                     norm_filter = 1e-3)
+    # based on policy, peak the maximum or minimum density
+    if (secondary_policy == "max") {
+      sec_selected <- unname(
+        as.matrix(
+          dens2[which.max(dens2$density),1:2]
+        )[1,]
+      )
+    } else {
+      sec_selected <- unname(
+        as.matrix(
+          dens2[which.min(dens2$density),1:2]
+        )[1,]
+      )
+    }
+    # from the 2D reference system to the 3D
+    sec_axis <- unname(sec_selected[1]) * u + unname(sec_selected[2]) * v
+
+    # normalisation should not be needed here, but
+    # to avoid dragging floating point errors...
+    sec_axis <- sec_axis/sqrt(sum(sec_axis^2))
+
+    # find the third axis of both the data frame and the target frame
+    a3 <- .cross(dens_peak, sec_axis)
+    b3 <- .cross(align_to, proj_secondary)
+
+    # A is the frame defined by axis aligned to dens_peak, sec_axis, a3
+    A <- cbind(dens_peak, sec_axis, a3)
+    # B is the target frame
+    B <- cbind(align_to, proj_secondary, b3)
+
+    # rotation matrix
+    R <- B %*% t(A)
+
+  } else if (n_ax == 3) {
+    R <- .rodrigues_rotation(dens_peak, align_to)
+  } else {
+    R <- .givens_rotation(dens_peak, align_to, rot_ax, cn)
+  }
+  R
+}
+
+#' Rotate data
+#'
+#' Rotate the data according to a rotation matrix
+#'
+#' @param m Input data matrix, rows are observations.
+#' @param R Rotation matrix such as output of [rotation_to_align()].
+#'   Transposed internally. See details.
+#' @returns Rotated matrix
+#' @details In mathematical convention, vectors are column vectors and a
+#'   rotation matrix \eqn{R} transforms a vector \eqn{\mathbf{v}} to its
+#'   rotated equivalent \eqn{\mathbf{v'}} via:
+#'   \deqn{\mathbf{v'} = R\mathbf{v}}
+#'   However, data matrices conventionally store observations as rows rather
+#'   than columns. This function handles the transposition internally, so that
+#'   \eqn{R} can be provided in its standard mathematical form and applied
+#'   correctly to row-vector data:
+#'   \deqn{M' = M R^T}
+#' @export
+apply_rotation <- function(m, R) {
+  m %*% t(R)
+}

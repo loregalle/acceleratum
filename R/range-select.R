@@ -11,7 +11,7 @@
 #' @param annot A data.frame of previously collected (labeled) ranges. It needs
 #'   follow the same structure as the output of this same function.
 #' @param ... passed on to methods
-#' @return A data.frame of (labeled) ranges with columns: label,
+#' @returns A data.frame of (labeled) ranges with columns: label,
 #'   xmin and xmax (start and end time as shown on the plot), imin and imax
 #'   (start and end row indices for the range).
 #' @details
@@ -412,6 +412,11 @@ range_select.matrix <- function(acc, axes = NULL, annot = NULL, ...) {
   out <- shiny::runApp(
     shiny::shinyApp(ui, server)
   )
+
+  if (!is.null(sr)) {
+    out$xmin <- out$xmin * unit_entry$divisor
+    out$xmax <- out$xmax * unit_entry$divisor
+  }
 
   print(out)
   invisible(out)

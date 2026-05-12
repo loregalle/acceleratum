@@ -17,7 +17,7 @@
 #' and \code{"b"} is one of the axes \{"x", "y", "z"\}.
 #' Examples of valid labels: \{"posx", "ypos", "x-", "+z", "nx"\}.
 #'
-#' @return A named list with elements:
+#' @returns A named list with elements:
 #' \describe{
 #'   \item{S}{Vector of scaling factors}
 #'   \item{M}{Misalignment matrix}

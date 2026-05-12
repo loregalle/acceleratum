@@ -3,7 +3,7 @@
 #'
 #' @param axes A string composed of any non-repeating combination of "x", "y",
 #'   "z" (e.g. "xyz", "xz", "y").
-#' @return A character vector such as c("x","y","z").
+#' @returns A character vector such as c("x","y","z").
 #' @noRd
 
 .parse_axes <- function(axes) {
@@ -27,7 +27,7 @@
 #' Infer axes from the number of columns / vector length
 #'
 #' @param n Integer. Length of vector or number of columns.
-#' @return A character vector of axis labels.
+#' @returns A character vector of axis labels.
 #' @noRd
 
 .infer_axes <- function(n) {
@@ -48,7 +48,7 @@
 #' Tries 3, then 2, then 1 column(s).
 #'
 #' @param len Integer. Length of the numeric vector.
-#' @return A character vector of axis labels.
+#' @returns A character vector of axis labels.
 #' @noRd
 
 .infer_axes_from_length <- function(len) {
@@ -62,7 +62,7 @@
 #' Convert to integer checking against tolerance.
 #'
 #' @param x a numeric vector
-#' @return an integer vector
+#' @returns an integer vector
 #' @noRd
 .as_integer_strict <- function(x, tol = sqrt(.Machine$double.eps)) {
   r <- round(x)
@@ -83,7 +83,7 @@
 #' to a common character string.
 #'
 #' @param label A character string.
-#' @return A character string.
+#' @returns A character string.
 #' @noRd
 .canon_face <- function(label) {
   label <- tolower(trimws(label))
@@ -111,7 +111,7 @@
 #' to a common character string.
 #'
 #' @param m A matrix.
-#' @return trimmed column means (10% each side)
+#' @returns trimmed column means (10% each side)
 #' @noRd
 .robust_mean <- function(m) {
   apply(m, 2L, mean, trim = 0.1)
@@ -122,7 +122,7 @@
 #' Average a list of mean vectors into a single vector
 #'
 #' @param lst A list.
-#' @return A vector of means
+#' @returns A vector of means
 #' @noRd
 .avg_face <- function(lst) {
   colMeans(do.call(rbind, lst))
@@ -133,7 +133,7 @@
 #' Clamp scalar to \[-1, 1\] before asin to avoid NaN due to floating point errors
 #'
 #' @param x A scalar.
-#' @return asin
+#' @returns asin
 #' @noRd
 .safe_asin <- function(x, tol = sqrt(.Machine$double.eps)) {
   if (abs(x) > 1 + tol) {
@@ -152,28 +152,27 @@
 #'
 #' @param from A vector.
 #' @param to A vector.
-#' @return A rotation matrix \code{R} such as \code{R %*% from}
+#' @param tol Tolerance value to test for parallel vectors
+#' @returns A rotation matrix \code{R} such as \code{R %*% from}
 #'   equals \code{to}
 #' @noRd
-.rodrigues_rotation <- function(from, to) {
+.rodrigues_rotation <- function(from, to, tol = 1e-10) {
   # normalise
   from <- from / sqrt(sum(from^2))
   to   <- to   / sqrt(sum(to^2))
 
   # cross product: rotation vector
-  k <- c(
-    from[c(2L,3L,1L)] * to[c(3L, 1L, 2L)] -
-      from[c(3L, 1L, 2L)] * to[c(2L,3L,1L)]
-  )
+  k <- .cross(from, to)
+
   # sin theta via cross product
   sin_theta <- sqrt(sum(k^2))
 
   # cos theta via dot product
   cos_theta <- as.vector(from %*% to)
 
-  if (sin_theta < 0) {        # if parallel
-    if (cos_theta > 0) {      # if codirectional
-      return(diag(3L))        # R is the identity
+  if (sin_theta < tol) {        # if parallel
+    if (cos_theta > 0) {        # if codirectional
+      return(diag(3L))          # R is the identity
     }
     # if not codirectional, 180 degree rotation
     seed_vec <- ifelse(        # use some simple logic to pick any
@@ -181,8 +180,8 @@
       c(1,0,0),
       c(0,1,0)
     )
-    k <- seed_vec - sum(perp * from) * from # orthogonalisation
-    k <- k / sqrt(sum(v^2))                 # normalisation
+    k <- .gram_schmidt(seed_vec, from)      # orthogonalisation
+    k <- k / sqrt(sum(k^2))                 # normalisation
     return(2 * outer(k, k) - diag(3))       # solving Rodrigues with theta = pi
   }
 
@@ -194,4 +193,66 @@
 
   # Rodrigues formula
   diag(3L) + sin_theta * K + (1-cos_theta) * K %*% K
+}
+
+#' Givens' rotation
+#'
+#' Uses Givens' rotation to find the rotation matrix that rotates
+#' the first input vector to be aligned with the second input vector.
+#'
+#' @param from A vector.
+#' @param to A vector.
+#' @param rot_axes the axes that define the plane being rotated
+#' @param axes the names of all the axes in the rotation matrix to be returned
+#' @returns A rotation matrix
+#' @noRd
+.givens_rotation <- function(from, to, rot_axes, axes = c("x", "y", "z")) {
+  from <- from / sqrt(sum(from^2))
+  to   <- to   / sqrt(sum(to^2))
+
+  R <- diag(length(axes))
+  rownames(R) <- colnames(R) <- axes
+  theta <- atan2(to[2L], to[1L]) - atan2(from[2L], from[1L])
+
+  R[rot_axes, rot_axes] <- c(
+    cos(theta), sin(theta), -sin(theta), cos(theta)
+  )
+  R
+}
+
+#' Gram-Schmidt orthogonalisation
+#'
+#' Uses Gram-Schmidt orthogonalisation to return the projection of vector
+#' \eqn{\mathbf{v}_1} on the plane that is perpendicular to \eqn{\mathbf{v}_2}
+#'
+#' @param v1 a 3d vector or matrix
+#' @param v2 a 3d vector or matrix
+#' @returns a 3d vector
+#' @noRd
+.gram_schmidt <- function(v1,v2) {
+  if (inherits(v1, "matrix") != inherits(v2, "matrix")) {
+    stop("'v1' and 'v2' must be either both matrices or both vectors")
+  }
+  if (inherits(v1, "matrix")) {
+    v1 - rowSums(v1 * v2) * v2
+  } else {
+    v1 - sum(v1 * v2) * v2
+  }
+}
+
+#' Geometrical cross product
+#'
+#' Finds the vector that is perpendicular to the plane defined by the
+#' \code{a} and \code{b} vectors
+#'
+#' @param a a 3d vector
+#' @param b another 3d vector
+#' @noRd
+.cross <- function(a, b) {
+  out <- c(
+    a[c(2L,3L,1L)] * b[c(3L, 1L, 2L)] -
+      a[c(3L, 1L, 2L)] * b[c(2L,3L,1L)]
+  )
+  names(out) <- names(a)
+  out
 }

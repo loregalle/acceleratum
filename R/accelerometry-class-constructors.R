@@ -8,7 +8,7 @@
 #'   \code{c("x","y","z")}.
 #' @param sampling_rate \code{NULL} or a single positive numeric (Hz).
 #' @param start_time \code{NULL} or a length-1 \code{POSIXct} vector.
-#' @return An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
+#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 new_accelerometry <- function(x,
                               sampling_rate = NULL,
                               start_time    = NULL) {
@@ -29,7 +29,7 @@ new_accelerometry <- function(x,
 #' it does not.
 #'
 #' @param x Object to validate.
-#' @return \code{x}
+#' @returns \code{x}
 #' @export
 
 validate_accelerometry <- function(x) {
@@ -165,7 +165,7 @@ validate_accelerometry <- function(x) {
 #'       to have it re-added to the data once most operations are performed.
 #'   }
 #'
-#' @return An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
+#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 #' @examples
 #' # vector as input
 #' x <- 1:12

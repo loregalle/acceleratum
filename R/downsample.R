@@ -10,7 +10,7 @@
 #' @param ds_factor Downsampling factor. Alternative to using
 #'   \code{to_sr} and \code{from_sr}.
 #'
-#' @return An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
+#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 #' @export
 downsample <- function(acc, ...) {
   UseMethod("downsample")

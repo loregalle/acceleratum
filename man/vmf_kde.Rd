@@ -4,7 +4,14 @@
 \alias{vmf_kde}
 \title{Von Mises-Fisher kernel density estimates}
 \usage{
-vmf_kde(m, n_grid = 1000L, kappa = 4, normalise = TRUE)
+vmf_kde(
+  m,
+  n_grid = 1000L,
+  kappa = 4,
+  normalise = TRUE,
+  weights = 1,
+  norm_filter = 1e-10
+)
 }
 \arguments{
 \item{m}{A numeric matrix with either 2 or 3 columns and
@@ -18,6 +25,12 @@ Higher values return sharper kernels.}
 \item{normalise}{Logical. If \code{TRUE} (default), the density is
 normalised by multiplying it by \eqn{\frac{C_p(\mathbf{\kappa})}{n}}.
 Else, the sum is returned. See details.}
+
+\item{weights}{Observation weights. Either a single number or a
+vector, recycled to \code{nrow(m)} length.}
+
+\item{norm_filter}{Minimum vector length. Observations that define
+lower vector lengths (i.e. Euclidean norms) are filtered out.}
 }
 \value{
 A data frame.

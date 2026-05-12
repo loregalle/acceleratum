@@ -11,7 +11,7 @@
 #'   Can be provided as diagonal matrix or numeric vector of 1s and -1s,
 #'   or a character vector or character string of axes to flip around.
 #' @param b The bias vector
-#' @return An \code{accelerometry} object containing the calibrated data
+#' @returns An \code{accelerometry} object containing the calibrated data
 #'   \eqn{A_{true}^T}, with the same dimensions and - if available -
 #'   sampling rate and start time as the input \code{A_sens}.
 #' @details
