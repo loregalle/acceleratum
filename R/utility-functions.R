@@ -73,9 +73,6 @@
   as.integer(r)
 }
 
-# Null-coalescing operator (base R < 4.4 compatibility)
-`%||%` <- function(a, b) if (!is.null(a)) a else b
-
 # Calibration ----
 #' Annotation to label
 #'
@@ -105,18 +102,6 @@
   unname(lookup[label])  # returns NA if not found
 }
 
-#' Trims column means
-#'
-#' Trims column means (10% each side) as a robust estimator
-#' to a common character string.
-#'
-#' @param m A matrix.
-#' @returns trimmed column means (10% each side)
-#' @noRd
-.robust_mean <- function(m) {
-  apply(m, 2L, mean, trim = 0.1)
-}
-
 #' List to vector of means
 #'
 #' Average a list of mean vectors into a single vector
@@ -126,22 +111,6 @@
 #' @noRd
 .avg_face <- function(lst) {
   colMeans(do.call(rbind, lst))
-}
-
-#' Safe asin
-#'
-#' Clamp scalar to \[-1, 1\] before asin to avoid NaN due to floating point errors
-#'
-#' @param x A scalar.
-#' @returns asin
-#' @noRd
-.safe_asin <- function(x, tol = sqrt(.Machine$double.eps)) {
-  if (abs(x) > 1 + tol) {
-    stop("asin argument (", x, ") is outside [-1, 1] by more than floating ",
-         "point tolerance, which may indicate a problem with the input data ",
-         "or calibration procedure.", call. = FALSE)
-  }
-  asin(max(-1, min(1, x)))
 }
 
 # Rotation ----

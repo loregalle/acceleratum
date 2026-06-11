@@ -112,7 +112,7 @@ cal_xu <- function(acc, annotations, g = 1,
     idx <- idx_limits[1]:idx_limits[2]
 
     seg <- acc[idx, axes, drop = FALSE]
-    m   <- .robust_mean(seg)
+    m   <- apply(seg, 2L, mean, trim = 0.1)
 
     seg_means[[i]] <- list(imin  = r$imin,
                            imax  = r$imax,
@@ -174,18 +174,18 @@ cal_xu <- function(acc, annotations, g = 1,
     bz <- Vz2[3L] + gL * SFz * sb * cos(t_zy) * sin(t_zx)
 
     # Step 3: angles theta_yx, theta_zy, theta_xz
-    t_yx <- .safe_asin(Vz1[2L] / (gL * SFy * cb))
-    t_zy <- .safe_asin(Vx1[3L] / (gL * SFz * cb))
-    t_xz <- .safe_asin(Vy1[1L] / (gL * SFx * cb))
+    t_yx <- asin(Vz1[2L] / (gL * SFy * cb))
+    t_zy <- asin(Vx1[3L] / (gL * SFz * cb))
+    t_xz <- asin(Vy1[1L] / (gL * SFx * cb))
 
     # Step 4: angles theta_xy, theta_yz, theta_zx
     d_xy <- -gL * SFx * cb * cos(t_xz)
     d_yz <- -gL * SFy * cb * cos(t_yx)
     d_zx <- -gL * SFz * cb * cos(t_zy)
 
-    if (abs(d_xy) > 1e-15) t_xy <- .safe_asin(Vz1[1L] / d_xy)
-    if (abs(d_yz) > 1e-15) t_yz <- .safe_asin(Vx1[2L] / d_yz)
-    if (abs(d_zx) > 1e-15) t_zx <- .safe_asin(Vy1[3L] / d_zx)
+    if (abs(d_xy) > 1e-15) t_xy <- asin(Vz1[1L] / d_xy)
+    if (abs(d_yz) > 1e-15) t_yz <- asin(Vx1[2L] / d_yz)
+    if (abs(d_zx) > 1e-15) t_zx <- asin(Vy1[3L] / d_zx)
 
     # Step 5: platform tilt beta
     d_sv1 <-  gL * SFy * cos(t_yx) * cos(t_yz)
@@ -196,7 +196,7 @@ cal_xu <- function(acc, annotations, g = 1,
     if (abs(d_sv2) > 1e-15) sv <- sv + (Vy2[1L] - bx) / d_sv2
     if (abs(d_sv1) > 1e-15) sv <- sv + (Vz2[2L] - by) / d_sv1
 
-    beta <- .safe_asin(sv / 3)
+    beta <- asin(sv / 3)
 
     # convergence check (skip first pass)
     X_curr <- c(SFx, SFy, SFz, bx, by, bz,
