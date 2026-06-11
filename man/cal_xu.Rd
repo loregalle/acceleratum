@@ -35,12 +35,18 @@ Xu et al. (2021)}
 Xu et al. (2021) six-position iterative calibration
 }
 \details{
-The \code{annotations} data frame should include at least three columns: imin,
-imax, and label. For each row, imin and imax define the row index range of
+The \code{annotations} data frame should include at least three columns: xmin,
+xmax, and label. For each row, xmin and xmax define the row index range of
 \code{acc}, while label must describe the face and the direction of the
 axis being sampled. Each label must be a string formatted as \code{"ab"} or
 \code{"ba"}, where \code{"a"} represents direction and can be any of \{"p",
 "pos", "+", "up"\} for positive or \{"n", "neg", "-", "down"\} for negative,
 and \code{"b"} is one of the axes \{"x", "y", "z"\}.
 Examples of valid labels: \{"posx", "ypos", "x-", "+z", "nx"\}.
+}
+\references{
+Xu, T., Xu, X., Xu, D., Zhao, H., 2021. A Novel Calibration
+Method Using Six Positions for MEMS Triaxial Accelerometer. IEEE
+Transactions on Instrumentation and Measurement 70, 1–11.
+https://doi.org/10.1109/TIM.2020.3026024
 }

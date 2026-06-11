@@ -8,14 +8,15 @@
 #' @param tol Convergence tolerance.
 #'
 #' @details
-#' The \code{annotations} data frame should include at least three columns: imin,
-#' imax, and label. For each row, imin and imax define the row index range of
+#' The \code{annotations} data frame should include at least three columns: xmin,
+#' xmax, and label. For each row, xmin and xmax define the row index range of
 #' \code{acc}, while label must describe the face and the direction of the
 #' axis being sampled. Each label must be a string formatted as \code{"ab"} or
 #' \code{"ba"}, where \code{"a"} represents direction and can be any of \{"p",
 #' "pos", "+", "up"\} for positive or \{"n", "neg", "-", "down"\} for negative,
 #' and \code{"b"} is one of the axes \{"x", "y", "z"\}.
 #' Examples of valid labels: \{"posx", "ypos", "x-", "+z", "nx"\}.
+#'
 #'
 #' @returns A named list with elements:
 #' \describe{
@@ -28,6 +29,12 @@
 #'   \item{params_xu}{List of estimated parameters as named in
 #'     Xu et al. (2021)}
 #' }
+#'
+#' @references Xu, T., Xu, X., Xu, D., Zhao, H., 2021. A Novel Calibration
+#' Method Using Six Positions for MEMS Triaxial Accelerometer. IEEE
+#' Transactions on Instrumentation and Measurement 70, 1–11.
+#' https://doi.org/10.1109/TIM.2020.3026024
+#'
 #' @export
 cal_xu <- function(acc, annotations, g = 1,
                    max_iter = 200L, tol = 1e-6) {
@@ -41,15 +48,21 @@ cal_xu <- function(acc, annotations, g = 1,
          " in `acc`. Missing: ", paste0(missing, collapse = ", "), ".",
          .call = FALSE)
   }
-  if (!all(c("imin", "imax", "label") %in% names(annotations))) {
-    stop("`annotations` must have columns imin, imax, and label. See ?cal_xu",
+  if (!all(c("xmin", "xmax", "label") %in% names(annotations))) {
+    stop("`annotations` must have columns xmin, xmax, and label. See ?cal_xu",
          " for details.",
          call. = FALSE)
   }
 
-  # reconstruct time axis in plot units
+  # reconstruct time axis
   sr <- attr(acc, "sampling_rate")
   st <- attr(acc, "start_time")
+
+  if (is.null(sr)) {
+    time_stamp <- 1:nrow(acc)
+  } else {
+    time_stamp <- seq(0, by = 1/sr, length.out = nrow(acc))
+  }
 
   # 1. Collect segment means
   face_means <- list()
@@ -91,31 +104,25 @@ cal_xu <- function(acc, annotations, g = 1,
   for (i in seq_len(n_ann)) {
     r   <- annotations[i, ]
 
-    if (!is.numeric(r$imin) || !is.numeric(r$imax)) {
-      warning("At least one of indices imin and imax for annotation ",
+    if (!is.numeric(r$xmin) || !is.numeric(r$xmax)) {
+      warning("At least one of xmin and xmax for annotation ",
       i, " (\"", r$label, "\") is not valid. Skipping.", call. = FALSE)
       next
     }
 
-    idx_limits <- as.integer(round(c(r$imin, r$imax)))
-    if (any(abs(idx_limits - c(r$imin, r$imax)) > sqrt(.Machine$double.eps))) {
-      warning("At least one of indices imin and imax for annotation ", i,
-              " (\"", r$label, "\") was not ",
-              "an exact integers and has been rounded.", call. = FALSE)
-    }
-    if (idx_limits[1] > idx_limits[2]) {
-      warning("Index imin is larger than imax for annotation ",
+    if (r$xmin > r$xmax) {
+      warning("xmin is larger than xmax for annotation ",
               i, " (\"", r$label, "\"). Skipping.", call. = FALSE)
       next
     }
 
-    idx <- idx_limits[1]:idx_limits[2]
+    idx <- which(time_stamp >= r$xmin & time_stamp <= r$xmax)
 
     seg <- acc[idx, axes, drop = FALSE]
     m   <- apply(seg, 2L, mean, trim = 0.1)
 
-    seg_means[[i]] <- list(imin  = r$imin,
-                           imax  = r$imax,
+    seg_means[[i]] <- list(xmin  = r$xmin,
+                           xmax  = r$xmax,
                            label = r$label,
                            mean  = m)
 
