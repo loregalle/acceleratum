@@ -203,9 +203,9 @@
     stop("'v1' and 'v2' must be either both matrices or both vectors")
   }
   if (inherits(v1, "matrix")) {
-    v1 - rowSums(v1 * v2) * v2
+    v1 - rowSums(v1 * v2)/rowSums(v2 * v2) * v2
   } else {
-    v1 - sum(v1 * v2) * v2
+    v1 - sum(v1 * v2)/sum(v2 * v2) * v2
   }
 }
 

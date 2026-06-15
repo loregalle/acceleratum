@@ -6,7 +6,7 @@
 \usage{
 vmf_kde(
   m,
-  n_grid = 1000L,
+  n_grid = 1440L,
   kappa = 4,
   normalise = TRUE,
   weights = 1,

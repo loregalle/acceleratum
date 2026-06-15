@@ -26,8 +26,8 @@ Ignored if \code{secondary_policy} is \code{NULL}. See details.}
 
 \item{fixed_ax}{placeholder}
 
-\item{n_grid}{passed to \code{\link[=vmf_kde]{vmf_kde()}}. If null, defaults to 5000 for the 3D
-case and 1000 for the 2D case.}
+\item{n_grid}{passed to \code{\link[=vmf_kde]{vmf_kde()}}. If null, defaults to 129600 for the 3D
+case and 1440 for the 2D case.}
 
 \item{...}{other arguments passed to \code{\link[=vmf_kde]{vmf_kde()}}}
 }

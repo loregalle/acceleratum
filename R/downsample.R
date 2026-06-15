@@ -73,7 +73,7 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
   # Subsample and return
   out_i <- seq(1, nrow(acc), by = ds_factor)
 
-  new_accelerometry(acc[out_i,],
+  new_accelerometry(suppressMessages(acc[out_i,]),
                     sampling_rate = to_sr,
                     start_time = acc_st)
 }

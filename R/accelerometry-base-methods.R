@@ -198,4 +198,3 @@ plot.aclrtm_accelerometry <- function(x, y, axes = "xyz", ...) {
   invisible(x)
 }
 
-

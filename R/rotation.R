@@ -35,7 +35,7 @@
 #'
 #' @export
 vmf_kde <- function(m,
-                    n_grid = 1000L,
+                    n_grid = 1440L,
                     kappa = 4,
                     normalise = TRUE,
                     weights = 1,
@@ -110,8 +110,8 @@ vmf_kde <- function(m,
 #' @param secondary_policy Policy for the alignment of the secondary axis.
 #'   Ignored if \code{secondary_policy} is \code{NULL}. See details.
 #' @param fixed_ax placeholder
-#' @param n_grid passed to [vmf_kde()]. If null, defaults to 5000 for the 3D
-#'   case and 1000 for the 2D case.
+#' @param n_grid passed to [vmf_kde()]. If null, defaults to 129600 for the 3D
+#'   case and 1440 for the 2D case.
 #' @param ... other arguments passed to [vmf_kde()]
 #' @returns Rotation matrix
 #' @export
@@ -267,7 +267,7 @@ rotation_to_align <- function(m,
   }
 
   if (is.null(n_grid)) {
-    n_grid <- ifelse(n_ax == 3, 5000, 1000)
+    n_grid <- ifelse(n_ax == 3, 129600, 1440)
   }
 
   # find directional density. On the sphere if 3D, on the circle if 2D.
@@ -366,5 +366,14 @@ rotation_to_align <- function(m,
 #'   \deqn{M' = M R^T}
 #' @export
 apply_rotation <- function(m, R) {
-  m %*% t(R)
+  out <- m %*% t(R)
+  if (inherits(m, "aclrtm_accelerometry")) {
+    new_accelerometry(
+      out,
+      sampling_rate = attr(x, "sampling_rate"),
+      start_time = attr(x, "start_time")
+    )
+  } else {
+    out
+  }
 }
