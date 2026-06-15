@@ -9,6 +9,9 @@
 #'   divisor of, the sampling rate of the input.
 #' @param ds_factor Downsampling factor. Alternative to using
 #'   \code{to_sr} and \code{from_sr}.
+#' @param FUN An optional function to apply to aggregated data rather than
+#'   simple downsampling.
+#' @param ... Arguments passed to \code{FUN}
 #'
 #' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 #' @export
@@ -19,7 +22,7 @@ downsample <- function(acc, ...) {
 #' @rdname downsample
 #' @export
 downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
-                              ds_factor = NULL, ...) {
+                              ds_factor = NULL, FUN = NULL, ...) {
   acc_sr <- attr(acc, "sampling_rate")
   acc_st <- attr(acc, "start_time")
 
@@ -65,15 +68,34 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
            call. = FALSE)
     }
 
-    ds_factor <- from_sr / to_sr
+    ds_factor <- trunc(from_sr / to_sr)
   } else if (!is.null(acc_sr)) {
+    ds_factor <- trunc(ds_factor)
     to_sr <- acc_sr / ds_factor
   }
 
-  # Subsample and return
-  out_i <- seq(1, nrow(acc), by = ds_factor)
+  if (is.null(FUN)) {
+    # Subsample and return
+    out_i <- seq(1, nrow(acc), by = ds_factor)
 
-  new_accelerometry(suppressMessages(acc[out_i,]),
-                    sampling_rate = to_sr,
-                    start_time = acc_st)
+    accelerometry(suppressMessages(acc[out_i,]),
+                  sampling_rate = to_sr,
+                  start_time = acc_st)
+  } else {
+    FUN <- match.fun(FUN)
+    nend <- floor(nrow(acc)/ds_factor) * ds_factor
+
+    cn <- colnames(acc)
+
+    out_m <- apply(array(c(acc[1:nend, ]),
+                         dim = c(ds_factor, nend/ds_factor, ncol(acc))),
+                   MARGIN = c(2L, 3L), FUN = FUN, ...)
+
+    colnames(out_m) <- cn
+
+    accelerometry(out_m,
+                  sampling_rate = to_sr,
+                  start_time = acc_st)
+  }
+
 }

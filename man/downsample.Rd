@@ -7,12 +7,19 @@
 \usage{
 downsample(acc, ...)
 
-\method{downsample}{matrix}(acc, to_sr = NULL, from_sr = NULL, ds_factor = NULL, ...)
+\method{downsample}{matrix}(
+  acc,
+  to_sr = NULL,
+  from_sr = NULL,
+  ds_factor = NULL,
+  FUN = NULL,
+  ...
+)
 }
 \arguments{
 \item{acc}{Accelerometry data input in matrix-like or data.frame format}
 
-\item{...}{passed to methods}
+\item{...}{Arguments passed to \code{FUN}}
 
 \item{to_sr}{Sampling rate of output. Must be lower than, and be a
 divisor of, the sampling rate of the input.}
@@ -21,6 +28,9 @@ divisor of, the sampling rate of the input.}
 
 \item{ds_factor}{Downsampling factor. Alternative to using
 \code{to_sr} and \code{from_sr}.}
+
+\item{FUN}{An optional function to apply to aggregated data rather than
+simple downsampling.}
 }
 \value{
 An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
