@@ -2,7 +2,7 @@
 #'
 #' Description
 #'
-#' @param acc Accelerometry data input in matrix-like or data.frame format
+#' @param acc Accelerometry data input in matrix-like format
 #' @param ... passed to methods
 #' @param from_sr Sampling rate of data input. Can be NULL.
 #' @param to_sr Sampling rate of output. Must be lower than, and be a

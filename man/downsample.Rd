@@ -17,7 +17,7 @@ downsample(acc, ...)
 )
 }
 \arguments{
-\item{acc}{Accelerometry data input in matrix-like or data.frame format}
+\item{acc}{Accelerometry data input in matrix-like format}
 
 \item{...}{Arguments passed to \code{FUN}}
 
