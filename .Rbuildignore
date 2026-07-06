@@ -5,3 +5,5 @@
 ^todolist\.html$
 ^\.positai$
 ^\.claude$
+^dev$
+^dev/scratch$

@@ -73,6 +73,21 @@
   as.integer(r)
 }
 
+#' Greatest common divisor of two integers
+#'
+#' Computes the GCD of \code{a} and \code{b} using the Euclidean algorithm.
+#'
+#' @param a A non-negative integer value.
+#' @param b A non-negative integer value.
+#'
+#' @returns A length-1 integer giving the greatest common divisor of \code{a}
+#'   and \code{b}. Returns \code{a} when \code{b} is zero.
+#'
+#' @noRd
+.gcd2 <- function(a, b) {
+  if (b == 0) a else Recall(b, a %% b)
+}
+
 # Calibration ----
 #' Annotation to label
 #'

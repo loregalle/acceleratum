@@ -4,7 +4,7 @@
 \alias{new_burst}
 \title{Low-level constructor for a aclrtm_burst object}
 \usage{
-new_burst(df, data_col, ts_col = NULL)
+new_burst(df, data_col, axes, ts_col = NULL)
 }
 \arguments{
 \item{df}{A data.frame whose \code{data_col} column is already a list of

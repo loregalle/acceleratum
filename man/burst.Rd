@@ -4,7 +4,7 @@
 \alias{burst}
 \title{Create a aclrtm_burst object}
 \usage{
-burst(df, data_col, ts_col = NULL, sep = " ")
+burst(df, data_col, axes = NULL, ts_col = NULL, sep = " ")
 }
 \arguments{
 \item{df}{A data.frame.}
@@ -12,6 +12,10 @@ burst(df, data_col, ts_col = NULL, sep = " ")
 \item{data_col}{Name of the column that holds burst data.  The column may
 be a list of numeric vectors (used as-is) or a character
 vector of \code{sep}-separated numbers (parsed automatically).}
+
+\item{axes}{Character scalar describing axis order, e.g. \code{"xyz"},
+\code{"yz"}, \code{"x"}.
+If \code{NULL}, inferred from burst length.}
 
 \item{ts_col}{Optional name of a timestamp column.  Stored as the \code{ts_col}
 attribute; the column itself is not modified.}
