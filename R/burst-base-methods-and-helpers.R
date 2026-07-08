@@ -84,7 +84,9 @@ print.aclrtm_burst <- function(x, n = 10L, ...) {
 #'
 #' @return Invisibly returns `x`.
 #' @export
-write_burst <- function(x, filename, writer = write.csv, sep = " ", ...) {
+write_burst <- function(x, filename,
+                        writer = utils::write.csv,
+                        sep = " ", ...) {
 
   if (!inherits(x, "aclrtm_burst")) {
     stop("`x` must be an aclrtm_burst object.", call. = FALSE)
@@ -103,7 +105,7 @@ write_burst <- function(x, filename, writer = write.csv, sep = " ", ...) {
   class(out) <- "data.frame"
   out[[data_col]] <- vapply(
     x[[data_col]],
-    function(v) paste(as.vector(t(m)), collapse = sep),
+    function(v) paste(as.vector(t(v)), collapse = sep),
     character(1L)
   )
 
