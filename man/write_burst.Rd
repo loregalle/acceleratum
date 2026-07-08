@@ -4,7 +4,7 @@
 \alias{write_burst}
 \title{Write an aclrtm_burst object to a delimited file}
 \usage{
-write_burst(x, filename, writer = write.csv, sep = " ", ...)
+write_burst(x, filename, writer = utils::write.csv, sep = " ", ...)
 }
 \arguments{
 \item{x}{An \code{aclrtm_burst} object.}

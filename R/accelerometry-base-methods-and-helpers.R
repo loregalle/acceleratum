@@ -347,7 +347,7 @@ accelerometry_to_burst <- function(x,
   out_ts_col <- if (!is.null(burst_times)) ts_col else NULL
 
   out_df <- if (!is.null(burst_times)) {
-    data.frame(setNames(list(burst_times), ts_col))
+    data.frame(stats::setNames(list(burst_times), ts_col))
   } else {
     data.frame(row.names = seq_along(burst_list))
   }

@@ -370,8 +370,8 @@ apply_rotation <- function(m, R) {
   if (inherits(m, "aclrtm_accelerometry")) {
     new_accelerometry(
       out,
-      sampling_rate = attr(x, "sampling_rate"),
-      start_time = attr(x, "start_time")
+      sampling_rate = attr(m, "sampling_rate"),
+      start_time = attr(m, "start_time")
     )
   } else {
     out

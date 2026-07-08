@@ -13,9 +13,9 @@ burst(df, data_col, axes = NULL, ts_col = NULL, sep = " ")
 be a list of numeric vectors (used as-is) or a character
 vector of \code{sep}-separated numbers (parsed automatically).}
 
-\item{axes}{Character scalar describing axis order, e.g. \code{"xyz"},
-\code{"yz"}, \code{"x"}.
-If \code{NULL}, inferred from burst length.}
+\item{axes}{A string composed of any non-repeating combination of "x", "y",
+"z" (e.g. "xyz", "xz", "y"). If \code{NULL} (default), an attempt
+to estimate axes from the data structure will be performed.}
 
 \item{ts_col}{Optional name of a timestamp column.  Stored as the \code{ts_col}
 attribute; the column itself is not modified.}

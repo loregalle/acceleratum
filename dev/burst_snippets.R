@@ -23,3 +23,7 @@ a2b(xx, 1)
 
 brst
 a2b(b2a(brst), burst_size = 40)
+
+con <- file("dev/scratch/calib/26147-cal-2025-acc.csv")
+aa <- read.csv(text = readLines(con, n = 20))
+close.connection(con)

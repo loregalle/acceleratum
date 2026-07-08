@@ -2,6 +2,9 @@
 #'
 #' @param df        A data.frame whose `data_col` column is already a list of
 #'                  numeric vectors.
+#' @param axes A string composed of any non-repeating combination of "x", "y",
+#'   "z" (e.g. "xyz", "xz", "y"). If \code{NULL} (default), an attempt
+#'   to estimate axes from the data structure will be performed.
 #' @param data_col  Character scalar — name of the burst-data column.
 #' @param ts_col    Character scalar or NULL — name of the timestamp column.
 #'
@@ -197,9 +200,9 @@ validate_burst <- function(x) {
 #' @param data_col  Name of the column that holds burst data.  The column may
 #'                  be a list of numeric vectors (used as-is) or a character
 #'                  vector of `sep`-separated numbers (parsed automatically).
-#' @param axes      Character scalar describing axis order, e.g. \code{"xyz"},
-#'                  \code{"yz"}, \code{"x"}.
-#'                  If \code{NULL}, inferred from burst length.
+#' @param axes A string composed of any non-repeating combination of "x", "y",
+#'   "z" (e.g. "xyz", "xz", "y"). If \code{NULL} (default), an attempt
+#'   to estimate axes from the data structure will be performed.
 #' @param ts_col    Optional name of a timestamp column.  Stored as the `ts_col`
 #'                  attribute; the column itself is not modified.
 #' @param sep       Separator used when parsing character burst data

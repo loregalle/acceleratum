@@ -12,6 +12,10 @@ numeric vectors.}
 
 \item{data_col}{Character scalar — name of the burst-data column.}
 
+\item{axes}{A string composed of any non-repeating combination of "x", "y",
+"z" (e.g. "xyz", "xz", "y"). If \code{NULL} (default), an attempt
+to estimate axes from the data structure will be performed.}
+
 \item{ts_col}{Character scalar or NULL — name of the timestamp column.}
 }
 \value{
