@@ -2,7 +2,7 @@ library("tidyverse")
 library("data.table")
 load_all()
 
-dat <- fread("dev/scratch/calib/26147-cal-2025-acc.csv")
+dat <- fread("dev/scratc_data/calib/26147-cal-2025-acc.csv")
 
 brst <- new_burst(dat, "accelerations-raw", "timestamp")
 validate_burst(brst)

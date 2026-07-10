@@ -240,3 +240,292 @@
   names(out) <- names(a)
   out
 }
+
+# Screening and selecting ----
+
+#' Parse a single burst cell
+#'
+#' Parse a burst cell (space- or sep-separated numeric string) into a
+#' samples x n_axes matrix, row-major interleaved convention
+#' (x1 y1 z1 x2 y2 z2 ...)
+#'
+#' @param s A string of sep-separated values
+#' @param n_axes Number of axes in the data
+#' @param sep Character separator
+#' @noRd
+.parse_burst_string <- function(s, n_axes, sep = " ") {
+  s <- trimws(s)
+  if (!nzchar(s)) return(matrix(numeric(0), ncol = n_axes))
+  if (identical(sep, " ")) {
+    parts <- strsplit(s, "\\s+")[[1]]
+  } else {
+    parts <- strsplit(s, sep, fixed = TRUE)[[1]]
+  }
+  vals <- suppressWarnings(as.numeric(parts))
+  if (anyNA(vals)) {
+    stop("Non-numeric value encountered while parsing a burst cell.")
+  }
+  if (length(vals) %% n_axes != 0) {
+    stop(sprintf(
+      "Burst cell length (%d) is not a multiple of n_axes (%d).",
+      length(vals), n_axes
+    ))
+  }
+  matrix(vals, ncol = n_axes, byrow = TRUE)
+}
+
+#' Record size in bytes
+#'
+#' Fixed record size (bytes) for one reservoir slot in the scratch file.
+#'
+#' @param slot_size self_explanatory
+#' @param n_axes number of axes in data matrix
+#'
+#' @details In order (int32 = 4 bytes, float64 = 8 bytes):
+#' \itemize{
+#'  \item{actual_n : 1 x int32}
+#'  \item{timestamps : slot_size x float64}
+#'  \item{raw samples : slot_size x n_axes x float64}
+#'  \item{source burst-row id per sample : slot_size x int32}
+#' }
+#' @noRd
+.record_size_bytes <- function(slot_size, n_axes) {
+  4L + slot_size * 8L + slot_size * n_axes * 8L + slot_size * 4L
+}
+
+#' Write slot in reservoir
+#'
+#' Write one (possibly replacing) reservoir slot to the scratch file.
+#'
+#' @param state The state environment
+#' @param slot Slot in the reservoir
+#' @param ts_w Timestamp values
+#' @param raw_w Matrix of data values
+#' @param row_w The sample burst-row ID
+#' @noRd
+.write_slot <- function(state, slot, ts_w, raw_w, row_w) {
+  n <- length(ts_w)
+  if (n > state$slot_size) {
+    stop(sprintf(
+      paste0(
+        "A stationary window required %d samples but `slot_size` is only %d. ",
+        "Re-run mine_reservoir() with a larger slot_size (e.g. slot_size = %d) ",
+        "or adjust window_sec / sr_tol."
+      ),
+      n, state$slot_size, n
+    ))
+  }
+
+  # size of padding needed to fill slot size
+  pad_n   <- state$slot_size - n
+  # pad timestamp
+  ts_pad  <- c(ts_w, numeric(pad_n))
+  # pad raw value matrix
+  raw_pad <- rbind(raw_w, matrix(0, nrow = pad_n, ncol = ncol(raw_w)))
+  # pad row ID
+  row_pad <- c(row_w, integer(pad_n))
+
+  # Offset to slot initial position
+  offset <- (slot - 1) * state$record_size_bytes
+  # reposition connection in scratch file
+  seek(state$scratch_con, where = offset, origin = "start")
+  # write data to scratch file
+  writeBin(as.integer(n), state$scratch_con, size = 4)
+  writeBin(as.double(ts_pad), state$scratch_con, size = 8)
+  writeBin(as.double(t(raw_pad)), state$scratch_con, size = 8)
+  writeBin(as.integer(row_pad), state$scratch_con, size = 4)
+}
+
+#' Pairwise angular distance
+#'
+#' Compute the pairwise angular distance
+#' between the rows of two unit-vector matrices. Used both for
+#' vector-vs-single-vector distance (Farthest Point Sampling candidate
+#' selection) and for full pairwise distance within a selected set
+#' (mean pairwise angular distance scoring).
+#'
+#' @param A A numeric matrix of unit row vectors (n x d).
+#' @param B A numeric matrix of unit row vectors (m x d).
+#'
+#' @return An n x m matrix of angular distances (radians), where entry
+#'   \code{[i, j]} is the angular distance between \code{A[i, ]} and
+#'   \code{B[j, ]}.
+#'
+#' @details Rows of \code{A} and \code{B} are assumed to already be unit
+#'   vectors; this function does not
+#'   normalise them.
+#' @noRd
+.angular_distance <- function(A, B) {
+  dots <- A %*% t(B)
+  dots <- pmin(pmax(dots, -1), 1)
+  acos(dots)
+}
+
+#' Evaluate the current window buffer and admit it to the reservoir if stationary
+#'
+#' For internal use only!
+#' Test the sliding-window buffer's current live contents (\code{state$buf_start}
+#' to \code{state$buf_end}) for stationarity using three criteria -- VeDBA
+#' (mean per-sample L2 norm of the dynamic acceleration), mean per-axis
+#' variance, and minimum window mean-vector magnitude -- all of which must
+#' pass for the window to be admitted. On a pass, runs one step of Vitter's
+#' reservoir sampling algorithm to determine the target slot \code{j} (the
+#' next empty slot while the reservoir is filling, or a randomly drawn slot
+#' once full, discarded if it falls outside the reservoir), then stores the
+#' window's mean vector at \code{j} and persists its raw samples to the
+#' scratch file via a single \code{.write_slot()} call. Assumes the caller
+#' has already established that the buffer spans a full window (see
+#' \code{.buf_append_and_evict()}); does not itself check window length or
+#' sample count.
+#'
+#' @param state The shared mutable state environment (see \code{mine_reservoir()}).
+#'   Updated in place: increments \code{windows_total} on every call, and on
+#'   a pass increments \code{passing_seen} and updates \code{reservoir_means}
+#'   / \code{reservoir_filled} accordingly.
+#'
+#' @noRd
+.evaluate_and_admit_window <- function(state) {
+  idx   <- state$buf_start:state$buf_end
+  ts_w  <- state$buf_ts[idx]
+  raw_w <- state$buf_raw[idx, , drop = FALSE]
+  row_w <- state$buf_row[idx]
+
+  mean_vec <- colMeans(raw_w)
+  dyn        <- sweep(raw_w, 2, mean_vec, "-")
+  vedba_mean <- mean(sqrt(rowSums(dyn^2))) # VeDBA: L2 norm per sample
+  var_mean   <- mean(apply(raw_w, 2, stats::var))
+  mag_mean   <- sqrt(sum(mean_vec^2))
+
+  state$windows_total <- state$windows_total + 1L
+
+  pass_now <- (vedba_mean < state$vedba_thresh) &&
+    (var_mean   < state$var_thresh)   &&
+    (mag_mean  >= state$mag_thresh)
+
+  if (!pass_now) return(invisible(NULL))
+
+  state$passing_seen <- state$passing_seen + 1L
+
+  if (state$reservoir_filled < state$reservoir_size) {
+    j <- state$reservoir_filled + 1L
+    state$reservoir_filled <- j
+  } else {
+    j <- sample.int(state$passing_seen, 1L)
+    if (j > state$reservoir_size) return(invisible(NULL))
+  }
+
+  state$reservoir_means[j, ] <- mean_vec
+  .write_slot(state, j, ts_w, raw_w, row_w)
+  invisible(NULL)
+}
+
+#' Append a sample to the sliding-window buffer and evict expired samples
+#'
+#' For internal use only!
+#' Append one reconstructed sample (timestamp, raw vector, source row id) to
+#' the growable sliding-window buffer stored on \code{state}, growing or
+#' compacting the underlying storage as needed, then evict samples from the
+#' front of the buffer whose timestamp is more than \code{state$window_sec}
+#' behind the newly appended sample. Does not evaluate the resulting window
+#' for stationarity or admit it to the reservoir; call
+#' \code{.evaluate_and_admit_window()} separately once the caller determines
+#' the buffer spans a full window.
+#'
+#' @param state The shared mutable state environment (see \code{mine_reservoir()}).
+#' @param ts Timestamp of the sample being appended.
+#' @param raw_row A single sample's raw values, as a numeric vector of length
+#'   \code{n_axes}.
+#' @param row_id Source burst-row identifier for the sample.
+#'
+#' @noRd
+.buf_append_and_evict <- function(state, ts, raw_row, row_id) {
+  if (state$buf_end >= state$buf_cap) {
+    live_len <- state$buf_end - state$buf_start + 1L
+    if (state$buf_start > 1L) {
+      idx <- state$buf_start:state$buf_end
+      state$buf_ts[seq_len(live_len)]      <- state$buf_ts[idx]
+      state$buf_raw[seq_len(live_len), ]   <- state$buf_raw[idx, , drop = FALSE]
+      state$buf_row[seq_len(live_len)]     <- state$buf_row[idx]
+      state$buf_start <- 1L
+      state$buf_end   <- live_len
+    } else {
+      new_cap <- state$buf_cap * 2L
+      new_ts  <- numeric(new_cap)
+      new_ts[seq_len(state$buf_cap)]  <- state$buf_ts
+      new_raw <- matrix(0, nrow = new_cap, ncol = ncol(state$buf_raw))
+      new_raw[seq_len(state$buf_cap), ] <- state$buf_raw
+      new_row <- integer(new_cap)
+      new_row[seq_len(state$buf_cap)] <- state$buf_row
+      state$buf_ts <- new_ts
+      state$buf_raw <- new_raw
+      state$buf_row <- new_row
+      state$buf_cap <- new_cap
+    }
+  }
+
+  state$buf_end <- state$buf_end + 1L
+  state$buf_ts[state$buf_end]    <- ts
+  state$buf_raw[state$buf_end, ] <- raw_row
+  state$buf_row[state$buf_end]   <- row_id
+
+  while (
+    (state$buf_end > state$buf_start) &&
+    (state$buf_ts[state$buf_end] - state$buf_ts[state$buf_start] > state$window_sec)
+  ) {
+    state$buf_start <- state$buf_start + 1L
+  }
+}
+
+#' Resolve a pending row and feed its samples into the sliding window
+#'
+#' For internal use only!
+#' Derive (or reuse) a per-sample sampling rate for the pending row
+#' \code{P}, reconstruct its per-sample timestamps, and push each
+#' resulting sample into the sliding-window buffer. If the derived rate is
+#' implausible (deviates from the nominal rate by more than
+#' \code{state$sr_tol}), the row's samples are discarded and the window
+#' buffer is cleared, mirroring a gap-detection reset.
+#'
+#' @param state The shared mutable state environment (see \code{mine_reservoir()}).
+#' @param P A pending row, as a list with elements \code{ts} (row start
+#'   timestamp), \code{mat} (samples x n_axes matrix), and \code{row_id}
+#'   (source burst-row identifier).
+#' @param ts_C Timestamp of the row immediately following \code{P}, used to
+#'   derive \code{P}'s per-sample rate as \code{nrow(P$mat) / (ts_C - P$ts)}.
+#'   Ignored (and may be omitted) when \code{sr_override = TRUE}.
+#' @param sr_override If \code{TRUE}, skip rate derivation and plausibility
+#'   checking entirely and use \code{state$nominal_sr} directly. Intended for
+#'   the file's final row, which has no successor row to derive a rate from.
+#'
+#' @noRd
+.resolve_and_process_row <- function(state, P,
+                                     ts_C = NULL, sr_override = FALSE) {
+  n_P <- nrow(P$mat)
+  if (n_P == 0L) return(invisible(NULL))  # nothing to contribute either way
+
+  if (sr_override) {
+    sr_P <- state$nominal_sr
+  } else {
+    sr_P <- n_P / (ts_C - P$ts)
+    if (abs(sr_P - state$nominal_sr) > state$sr_tol) {
+      # cannot reliably reconstruct timestamps across this row, clear buffer
+      state$buf_start <- 1L
+      state$buf_end   <- 0L
+      return(invisible(NULL))
+    }
+  }
+
+  ts_samples <- P$ts + (seq_len(n_P) - 1L) / sr_P
+  for (j in seq_len(n_P)) {
+    .buf_append_and_evict(state, ts_samples[j], P$mat[j, ], P$row_id)
+
+    n_buf <- state$buf_end - state$buf_start + 1L
+    if (
+      n_buf >= state$min_samples_per_window &&
+      (state$buf_ts[state$buf_end] - state$buf_ts[state$buf_start]) >= state$window_sec
+    ) {
+      .evaluate_and_admit_window(state)
+    }
+  }
+  invisible(NULL)
+}
