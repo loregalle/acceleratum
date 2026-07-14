@@ -1,52 +1,52 @@
-#' Low-level constructor for accelerometry objects
+#' Low-level constructor for accelerometery objects
 #'
-#' Wraps a numeric matrix in the "aclrtm_accelerometry" class and attaches
+#' Wraps a numeric matrix in the "aclrtm_accelerometery" class and attaches
 #' optional metadata attributes.  Intended for internal use or for developers;
-#' for interactive use, call [accelerometry()].
+#' for interactive use, call [accelerometery()].
 #'
 #' @param x A numeric matrix with 1-3 columns whose names are a subset of
 #'   \code{c("x","y","z")}.
 #' @param sampling_rate \code{NULL} or a single positive numeric (Hz).
 #' @param start_time \code{NULL} or a length-1 \code{POSIXct} vector.
-#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
-new_accelerometry <- function(x,
-                              sampling_rate = NULL,
-                              start_time    = NULL) {
+#' @returns An object of class \code{c("aclrtm_accelerometery","matrix","array")}.
+new_accelerometery <- function(x,
+                               sampling_rate = NULL,
+                               start_time    = NULL) {
   stopifnot(is.matrix(x), is.numeric(x))
 
   structure(
     x,
     sampling_rate = sampling_rate,
     start_time    = start_time,
-    class         = c("aclrtm_accelerometry", "matrix", "array")
+    class         = c("aclrtm_accelerometery", "matrix", "array")
   )
 }
 
-#' Validate an accelerometry object
+#' Validate an accelerometery object
 #'
 #' Checks that \code{x} satisfies all structural invariants of the
-#' \code{aclrtm_accelerometry} class and throws informative errors if
+#' \code{aclrtm_accelerometery} class and throws informative errors if
 #' it does not.
 #'
 #' @param x Object to validate.
 #' @returns \code{x}
 #' @export
 
-validate_accelerometry <- function(x) {
+validate_accelerometery <- function(x) {
 
   # class & type
-  if (!inherits(x, "aclrtm_accelerometry")) {
-    stop("`x` must be an 'aclrtm_accelerometry' object.")
+  if (!inherits(x, "aclrtm_accelerometery")) {
+    stop("`x` must be an 'aclrtm_accelerometery' object.")
   }
   if (!is.matrix(x) || !is.numeric(x)) {
-    stop("An 'aclrtm_accelerometry' object must be a numeric matrix.")
+    stop("An 'aclrtm_accelerometery' object must be a numeric matrix.")
   }
 
   # dimensions
   nc <- ncol(x)
   if (is.null(nc) || nc < 1L || nc > 3L) {
     stop(
-      "An 'aclrtm_accelerometry' matrix must have 1, 2, or 3 columns ",
+      "An 'aclrtm_accelerometery' matrix must have 1, 2, or 3 columns ",
       "(found ", nc, ")."
     )
   }
@@ -98,10 +98,10 @@ validate_accelerometry <- function(x) {
   x
 }
 
-#' Create an accelerometry object
+#' Create an accelerometery object
 #'
-#' Constructor for \code{aclrtm_accelerometry} objects.
-#' An \code{aclrtm_accelerometry} object
+#' Constructor for \code{aclrtm_accelerometery} objects.
+#' An \code{aclrtm_accelerometery} object
 #' represents a time series of acceleration measurements. It is effectively
 #' a matrix with rows being observations and each column being a spatial axis
 #' (a subset of x, y, z). Two optional metadata attributes can be attached:
@@ -118,10 +118,10 @@ validate_accelerometry <- function(x) {
 #' @param ... Additional arguments passed to the appropriate method.
 #' @param time_col Optional character vector of length 1 specifying the
 #'   time column. It can also be an integer specifying the column index.
-#' @details \code{aclrtm_accelerometry} is a utility class that can be used to
-#'   work with (tri)axial accelerometry data in a consistent fashion within the
+#' @details \code{aclrtm_accelerometery} is a utility class that can be used to
+#'   work with (tri)axial accelerometery data in a consistent fashion within the
 #'   \code{acceleratum} package. The constructor function
-#'   \code{accelerometry()} can accept input data (argument \code{x})
+#'   \code{accelerometery()} can accept input data (argument \code{x})
 #'   as either a numeric vector, a numeric matrix, or a data frame.
 #'
 #'   If \code{x} is a vector and the argument \code{axes} is provided,
@@ -132,7 +132,7 @@ validate_accelerometry <- function(x) {
 #'
 #'   If \code{x} is a matrix, each row is assumed to be an observation and
 #'   columns are assumed to be the axes. Effectively, when the input is
-#'   a matrix, \code{accelerometry()} will run a few sanity checks and
+#'   a matrix, \code{accelerometery()} will run a few sanity checks and
 #'   return the same data structure with attached attributes (if provided).
 #'   If the argument \code{axes} was provided and column names were
 #'   already present, \code{axes} takes precedence and throws a warning.
@@ -147,8 +147,8 @@ validate_accelerometry <- function(x) {
 #'   With 3 or fewer numeric columns, column names will be retained if they are
 #'   a subset of \code{c("x", "y", "z")} or overridden (with warning).
 #'
-#'   As accelerometry data can often be large, an object of class
-#'   \code{"aclrtm_accelerometry"} does not store the vector of timestamps.
+#'   As accelerometery data can often be large, an object of class
+#'   \code{"aclrtm_accelerometery"} does not store the vector of timestamps.
 #'   Instead, attributes \code{start_time} and \code{sampling_rate} can be
 #'   provided and timestamps will be estimated as needed within the
 #'   \code{acceleratum} package. We feel that this is a good enough
@@ -165,28 +165,28 @@ validate_accelerometry <- function(x) {
 #'       to have it re-added to the data once most operations are performed.
 #'   }
 #'
-#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
+#' @returns An object of class \code{c("aclrtm_accelerometery","matrix","array")}.
 #' @examples
 #' # vector as input
 #' x <- 1:12
-#' accelerometry(x,                           # 3 axes inferred
+#' accelerometery(x,                           # 3 axes inferred
 #'               sampling_rate = 4,
 #'               start_time = as.POSIXct(0))
-#' accelerometry(x, "xyz", 4, 1)              # 3 axes specified
-#' accelerometry(x, "yz", 8, as.POSIXct(1e7)) # 2 axes specified
+#' accelerometery(x, "xyz", 4, 1)              # 3 axes specified
+#' accelerometery(x, "yz", 8, as.POSIXct(1e7)) # 2 axes specified
 #'
 #' ## discrepancy between vector length and axes argument throws an error
 #' tryCatch(
-#'   accelerometry(1:10, axes = "xyz"),
+#'   accelerometery(1:10, axes = "xyz"),
 #'   error = function(e) cat(conditionMessage(e), "\n")
 #' )
 #'
 #' # Matrix as input
 #' x <- matrix(1:12, 4, 3)
-#' accelerometry(x)                           # column names inferred
-#' accelerometry(x, "yzx")                    # column names specified
+#' accelerometery(x)                           # column names inferred
+#' accelerometery(x, "yzx")                    # column names specified
 #' colnames(x) <- letters[1:3]
-#' accelerometry(x)                           # warning thrown
+#' accelerometery(x)                           # warning thrown
 #'
 #' # Data frame as input
 #' x <- data.frame(x = 1:4,
@@ -195,30 +195,30 @@ validate_accelerometry <- function(x) {
 #'                 timestamp = as.POSIXct(seq(.5,2,.5), tz = "UTC"))
 #'
 #' ## start_time and sampling_rate inferred from the timestamp column
-#' accelerometry(x, time_col = "timestamp")
+#' accelerometery(x, time_col = "timestamp")
 #'
 #' ## if sampling rate is known from device settings,
 #' ## providing it manually overrides inference.
-#' accelerometry(x, sampling_rate = 5, time_col = "timestamp")
+#' accelerometery(x, sampling_rate = 5, time_col = "timestamp")
 #'
 #' @export
 
-accelerometry <- function(x,
-                          axes          = NULL,
-                          sampling_rate = NULL,
-                          start_time    = NULL,
-                          ...) {
-  UseMethod("accelerometry")
+accelerometery <- function(x,
+                           axes          = NULL,
+                           sampling_rate = NULL,
+                           start_time    = NULL,
+                           ...) {
+  UseMethod("accelerometery")
 }
 
 #' @export
-#' @rdname accelerometry
+#' @rdname accelerometery
 
-accelerometry.numeric <- function(x,
-                                  axes          = NULL,
-                                  sampling_rate = NULL,
-                                  start_time    = NULL,
-                                  ...) {
+accelerometery.numeric <- function(x,
+                                   axes          = NULL,
+                                   sampling_rate = NULL,
+                                   start_time    = NULL,
+                                   ...) {
 
   # resolve axes
   if (is.null(axes)) {
@@ -246,21 +246,21 @@ accelerometry.numeric <- function(x,
   mat <- matrix(x, ncol = n_cols, byrow = TRUE,
                 dimnames = list(NULL, col_names))
 
-  validate_accelerometry(
-    new_accelerometry(mat,
-                      sampling_rate = sampling_rate,
-                      start_time    = start_time)
+  validate_accelerometery(
+    new_accelerometery(mat,
+                       sampling_rate = sampling_rate,
+                       start_time    = start_time)
   )
 }
 
 #' @export
-#' @rdname accelerometry
+#' @rdname accelerometery
 
-accelerometry.matrix <- function(x,
-                                 axes          = NULL,
-                                 sampling_rate = NULL,
-                                 start_time    = NULL,
-                                 ...) {
+accelerometery.matrix <- function(x,
+                                  axes          = NULL,
+                                  sampling_rate = NULL,
+                                  start_time    = NULL,
+                                  ...) {
 
   if (!is.numeric(x)) stop("`x` must be a numeric matrix.")
 
@@ -307,22 +307,22 @@ accelerometry.matrix <- function(x,
 
   colnames(x) <- col_names
 
-  validate_accelerometry(
-    new_accelerometry(x,
-                      sampling_rate = sampling_rate,
-                      start_time    = start_time)
+  validate_accelerometery(
+    new_accelerometery(x,
+                       sampling_rate = sampling_rate,
+                       start_time    = start_time)
   )
 }
 
 #' @export
-#' @rdname accelerometry
+#' @rdname accelerometery
 
-accelerometry.data.frame <- function(x,
-                                     axes          = NULL,
-                                     sampling_rate = NULL,
-                                     start_time    = NULL,
-                                     time_col      = NULL,
-                                     ...) {
+accelerometery.data.frame <- function(x,
+                                      axes          = NULL,
+                                      sampling_rate = NULL,
+                                      start_time    = NULL,
+                                      time_col      = NULL,
+                                      ...) {
 
   if (!is.data.frame(x)) stop("`x` must be a data frame.")
 
@@ -421,7 +421,7 @@ accelerometry.data.frame <- function(x,
     }
     if (ncol(acc_df) > 3L) {
       stop(
-        "Found ", ncol(acc_df), " numeric columns but an `aclrtm_accelerometry`",
+        "Found ", ncol(acc_df), " numeric columns but an `aclrtm_accelerometery`",
         "object can have at most 3.  Use `axes` to select the relevant columns."
       )
     }
@@ -439,8 +439,8 @@ accelerometry.data.frame <- function(x,
   mat <- as.matrix(acc_df)
 
   # delegate to matrix method for column-name inference / validation
-  accelerometry.matrix(mat,
-                       axes          = axes,
-                       sampling_rate = sampling_rate,
-                       start_time    = start_time)
+  accelerometery.matrix(mat,
+                        axes          = axes,
+                        sampling_rate = sampling_rate,
+                        start_time    = start_time)
 }

@@ -2,7 +2,7 @@
 #'
 #' Apply calibration to raw data
 #'
-#' @param A_sens Input accelerometry data with axes as columns and samples as
+#' @param A_sens Input accelerometery data with axes as columns and samples as
 #'   rows. See details.
 #' @param S The scale factor diagonal matrix (can be provided as a vector)
 #' @param M The misalignment matrix
@@ -11,7 +11,7 @@
 #'   Can be provided as diagonal matrix or numeric vector of 1s and -1s,
 #'   or a character vector or character string of axes to flip around.
 #' @param b The bias vector
-#' @returns An \code{accelerometry} object containing the calibrated data
+#' @returns An \code{aclrtm_accelerometery} object containing the calibrated data
 #'   \eqn{A_{true}^T}, with the same dimensions and - if available -
 #'   sampling rate and start time as the input \code{A_sens}.
 #' @details
@@ -185,7 +185,7 @@ apply_cal <- function(A_sens,
   A_true <- sweep(A_sens, 2L, b, "-") %*% solve(S) %*% t(solve(M)) %*% R
   colnames(A_true) <- colnames(A_sens)
 
-  new_accelerometry(A_true,
+  new_accelerometery(A_true,
                     sampling_rate = sr,
                     start_time    = st)
 }

@@ -4,9 +4,9 @@
 \name{acceleratum-package}
 \alias{acceleratum}
 \alias{acceleratum-package}
-\title{acceleratum: What the Package Does (Title Case)}
+\title{acceleratum: Calibrate (Triaxial) Accelerometer Devices}
 \description{
-More about what it does (maybe more than one line). Continuation lines should be indented.
+Support the for bench calibration of (triaxial) accelerometer devices and methods for the calibration of field-deployed devices.
 }
 \author{
 \strong{Maintainer}: Lorenzo Galletta \email{l.galletta@ecos.au.dk} \email{l.galletta@tuta.com} (\href{https://orcid.org/0000-0001-6917-3995}{ORCID})

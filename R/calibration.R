@@ -239,7 +239,7 @@ process_annotations <- function(acc, annotations, g = 1) {
 
   message("  [LS] converged in ", it_done, " iterations")
 
-  S <- diag(apply(M_combined, 1, \(.x) sqrt(sum(.x^2))))
+  S <- diag(apply(M_combined, 1, function(.x) sqrt(sum(.x^2))))
   M <- solve(S) %*% M_combined
 
 

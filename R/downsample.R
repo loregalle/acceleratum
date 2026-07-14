@@ -1,8 +1,8 @@
-#' Downsample accelerometry data
+#' Downsample accelerometery data
 #'
 #' Description
 #'
-#' @param acc Accelerometry data input in matrix-like format
+#' @param acc accelerometery data input in matrix-like format
 #' @param ... passed to methods
 #' @param from_sr Sampling rate of data input. Can be NULL.
 #' @param to_sr Sampling rate of output. Must be lower than, and be a
@@ -13,7 +13,7 @@
 #'   simple downsampling.
 #' @param ... Arguments passed to \code{FUN}
 #'
-#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
+#' @returns An object of class \code{c("aclrtm_accelerometery","matrix","array")}.
 #' @export
 downsample <- function(acc, ...) {
   UseMethod("downsample")
@@ -59,7 +59,7 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
       from_sr <- acc_sr
     }
     divisor_safe_check <- (abs(round(from_sr / to_sr) - from_sr / to_sr) >
-      sqrt(.Machine$double.eps))
+                             sqrt(.Machine$double.eps))
     if (to_sr >= from_sr || divisor_safe_check) {
       stop("`to_sr` must be lower than, and be a divisor of ",
            "input sampling rate\n",
@@ -78,9 +78,9 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
     # Subsample and return
     out_i <- seq(1, nrow(acc), by = ds_factor)
 
-    accelerometry(suppressMessages(acc[out_i,]),
-                  sampling_rate = to_sr,
-                  start_time = acc_st)
+    accelerometery(suppressMessages(acc[out_i,]),
+                   sampling_rate = to_sr,
+                   start_time = acc_st)
   } else {
     FUN <- match.fun(FUN)
     nend <- floor(nrow(acc)/ds_factor) * ds_factor
@@ -93,9 +93,9 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
 
     colnames(out_m) <- cn
 
-    accelerometry(out_m,
-                  sampling_rate = to_sr,
-                  start_time = acc_st)
+    accelerometery(out_m,
+                   sampling_rate = to_sr,
+                   start_time = acc_st)
   }
 
 }

@@ -1,9 +1,9 @@
-#' Select and annotate accelerometry bursts
+#' Select and annotate accelerometery bursts
 #'
 #' Opens an interactive Shiny app that relies on a plotly device to let the
 #' user select and label x-axis ranges.
 #'
-#' @param acc An object of class \code{accelerometry}, \code{matrix}, or
+#' @param acc An object of class \code{accelerometery}, \code{matrix}, or
 #'   \code{data.frame}
 #' @param axes A string composed of any non-repeating combination of "x", "y",
 #'   "z" (e.g. "xyz", "xz", "y") or \code{NULL}. Columns must be present in

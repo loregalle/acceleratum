@@ -3,7 +3,7 @@
 \name{downsample}
 \alias{downsample}
 \alias{downsample.matrix}
-\title{Downsample accelerometry data}
+\title{Downsample accelerometery data}
 \usage{
 downsample(acc, ...)
 
@@ -17,7 +17,7 @@ downsample(acc, ...)
 )
 }
 \arguments{
-\item{acc}{Accelerometry data input in matrix-like format}
+\item{acc}{accelerometery data input in matrix-like format}
 
 \item{...}{Arguments passed to \code{FUN}}
 
@@ -33,7 +33,7 @@ divisor of, the sampling rate of the input.}
 simple downsampling.}
 }
 \value{
-An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
+An object of class \code{c("aclrtm_accelerometery","matrix","array")}.
 }
 \description{
 Description

@@ -1,6 +1,6 @@
 Package: acceleratum
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Calibrate (Triaxial) Accelerometer Devices
 Version: 0.1.0
 Authors@R: c(
     person(
@@ -10,8 +10,9 @@ Authors@R: c(
       comment = c(ORCID = "0000-0001-6917-3995")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
+Description: Support the for bench calibration of (triaxial)
+    accelerometer devices and methods for
+    the calibration of field-deployed devices.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
@@ -22,5 +23,9 @@ Imports:
 Suggests: 
     plotly,
     shiny,
-    shinyjs
+    shinyjs,
+    testthat (>= 3.0.0)
 Config/roxygen2/version: 8.0.0.9000
+Config/testthat/edition: 3
+Depends: 
+    R (>= 4.1.0)

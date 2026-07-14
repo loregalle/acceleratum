@@ -13,7 +13,7 @@ apply_cal(
 )
 }
 \arguments{
-\item{A_sens}{Input accelerometry data with axes as columns and samples as
+\item{A_sens}{Input accelerometery data with axes as columns and samples as
 rows. See details.}
 
 \item{S}{The scale factor diagonal matrix (can be provided as a vector)}
@@ -28,7 +28,7 @@ or a character vector or character string of axes to flip around.}
 \item{b}{The bias vector}
 }
 \value{
-An \code{accelerometry} object containing the calibrated data
+An \code{aclrtm_accelerometery} object containing the calibrated data
 \eqn{A_{true}^T}, with the same dimensions and - if available -
 sampling rate and start time as the input \code{A_sens}.
 }

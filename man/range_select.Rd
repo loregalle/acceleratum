@@ -3,14 +3,14 @@
 \name{range_select}
 \alias{range_select}
 \alias{range_select.matrix}
-\title{Select and annotate accelerometry bursts}
+\title{Select and annotate accelerometery bursts}
 \usage{
 range_select(acc, axes = NULL, annot = NULL, ...)
 
 \method{range_select}{matrix}(acc, axes = NULL, annot = NULL, ...)
 }
 \arguments{
-\item{acc}{An object of class \code{accelerometry}, \code{matrix}, or
+\item{acc}{An object of class \code{accelerometery}, \code{matrix}, or
 \code{data.frame}}
 
 \item{axes}{A string composed of any non-repeating combination of "x", "y",
