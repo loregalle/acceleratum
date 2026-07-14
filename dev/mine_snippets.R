@@ -20,7 +20,15 @@ selected_list <- select_fps(mined_list, 6)
 selected_list
 
 reconstructed <- reconstruct_selected(mined_list, selected_list$selected_idx, TRUE)
+reconstructed <- lapply(reconstructed, \(.x){
+  .x$mean <- colMeans(.x$data)
+  .x
+})
 reconstructed
+
+calib <- cal_accel(reconstructed, diagonal_only = FALSE)
+calib
+calib$M
 
 reconstructed[[6]]$data
 norm <- reconstructed[[6]]$data |> colMeans() |> `^`(x=_, y = 2) |> sum() |> sqrt()

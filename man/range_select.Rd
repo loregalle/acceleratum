@@ -39,5 +39,5 @@ as a step in bench calibration of devices. Large amounts of data
 cases, consider downsampling (e.g. with \code{\link[=downsample]{downsample()}}).
 }
 \seealso{
-\code{\link[=downsample]{downsample()}}, \code{\link[=cal_xu]{cal_xu()}}
+\code{\link[=downsample]{downsample()}}, \code{\link[=cal_accel]{cal_accel()}}
 }

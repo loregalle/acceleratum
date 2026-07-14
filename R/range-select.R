@@ -20,7 +20,7 @@
 #' as a step in bench calibration of devices. Large amounts of data
 #' (most deployment situations) might be slow to plot or cause errors. In such
 #' cases, consider downsampling (e.g. with [downsample()]).
-#' @seealso [downsample()], [cal_xu()]
+#' @seealso [downsample()], [cal_accel()]
 #'
 #' @export
 range_select <- function(acc, axes = NULL, annot = NULL, ...) {

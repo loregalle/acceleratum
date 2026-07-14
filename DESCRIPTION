@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: c(
     person(
       "Lorenzo", "Galletta",
-      email = "l.galletta@ecos.au.dk",
+      email = c("l.galletta@ecos.au.dk", "l.galletta@tuta.com"),
       role = c("aut", "cre"),
       comment = c(ORCID = "0000-0001-6917-3995")
     )
