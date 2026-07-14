@@ -184,7 +184,7 @@ process_annotations <- function(acc, annotations, g = 1) {
 #' @returns A named list with \code{M}, \code{Minv}, \code{bias},
 #'   \code{seg_means}, \code{iters}, \code{dP_hist}.
 #' @noRd
-.cal_affine <- function(seg_list, g, diagonal_only, estimate_bias,
+.cal_ls <- function(seg_list, g, diagonal_only, estimate_bias,
                         max_iter, tol, verbose) {
 
   n <- length(seg_list)
@@ -229,7 +229,7 @@ process_annotations <- function(acc, annotations, g = 1) {
     it_done <- it
 
     if (verbose) {
-      message(sprintf("  [Affine] iter %4d: dP = %.4e", it, dP))
+      message(sprintf("  [LS] iter %4d: dP = %.4e", it, dP))
     }
 
     M_combined <- M_new
@@ -237,7 +237,7 @@ process_annotations <- function(acc, annotations, g = 1) {
     if (dP < tol) break
   }
 
-  message("  [Affine] converged in ", it_done, " iterations")
+  message("  [LS] converged in ", it_done, " iterations")
 
   S <- diag(apply(M_combined, 1, \(.x) sqrt(sum(.x^2))))
   M <- solve(S) %*% M_combined
@@ -260,7 +260,7 @@ process_annotations <- function(acc, annotations, g = 1) {
 #' present via \code{$glabel} in \code{seg_list}. Estimates scale factors,
 #' full misalignment, bias, and platform tilt \code{beta}.
 #'
-#' @inheritParams .cal_affine
+#' @inheritParams .cal_ls
 #' @returns A named list matching the original \code{cal_xu()} output shape.
 #' @noRd
 .cal_xu <- function(seg_list, g, max_iter, tol, verbose) {
@@ -442,9 +442,9 @@ cal_accel <- function(seg_list,
                    tol = tol, verbose = verbose))
   }
 
-  .cal_affine(seg_list, g = g,
-              diagonal_only = diagonal_only,
-              estimate_bias = estimate_bias,
-              max_iter = max_iter, tol = tol,
-              verbose = verbose)
+  .cal_ls(seg_list, g = g,
+          diagonal_only = diagonal_only,
+          estimate_bias = estimate_bias,
+          max_iter = max_iter, tol = tol,
+          verbose = verbose)
 }
