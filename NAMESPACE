@@ -35,5 +35,7 @@ export(validate_accelerometry)
 export(validate_burst)
 export(vmf_kde)
 export(write_burst)
-importFrom(utils,head)
-importFrom(utils,tail)
+importFrom(utils,
+  head,
+  tail
+)
