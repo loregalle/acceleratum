@@ -1,6 +1,6 @@
 test_that("numeric method builds a matrix with inferred axes", {
   x <- 1:12
-  out <- accelerometery(x)
+  expect_message(out <- accelerometery(x), "inferred axes = \"xyz\"")
   expect_s3_class(out, "aclrtm_accelerometery")
   expect_equal(colnames(out), c("x", "y", "z"))
   expect_equal(dim(out), c(4, 3))
@@ -27,7 +27,7 @@ test_that("numeric method attaches sampling_rate and start_time", {
 
 test_that("matrix method infers axes when no column names are present", {
   x <- matrix(1:12, 4, 3)
-  out <- accelerometery(x)
+  expect_message(out <- accelerometery(x), "inferred axes = \"xyz\"")
   expect_equal(colnames(out), c("x", "y", "z"))
 })
 
@@ -39,7 +39,8 @@ test_that("matrix method keeps valid existing column names", {
 
 test_that("matrix method warns and overrides invalid existing column names", {
   x <- matrix(1:12, 4, 3, dimnames = list(NULL, letters[1:3]))
-  expect_warning(out <- accelerometery(x), "not valid axis labels")
+  expect_warning(out <- suppressMessages(accelerometery(x)),
+                 "not valid axis labels")
   expect_equal(colnames(out), c("x", "y", "z"))
 })
 
@@ -65,7 +66,8 @@ test_that("data.frame method derives start_time and sampling_rate from time_col"
     x = 1:4, y = 5:8, z = 9:12,
     timestamp = as.POSIXct(seq(.5, 2, .5), tz = "UTC")
   )
-  out <- accelerometery(df, time_col = "timestamp")
+  expect_message(out <- accelerometery(df, time_col = "timestamp"),
+                 "estimated as 2 Hz")
   expect_equal(attr(out, "start_time"), as.POSIXct(0.5, tz = "UTC"))
   expect_equal(attr(out, "sampling_rate"), 2) # 1 / 0.5s spacing
 })
@@ -80,7 +82,8 @@ test_that("data.frame method lets explicit sampling_rate override the estimate",
 
 test_that("data.frame method reorders unsorted rows by time_col", {
   df <- data.frame(x = c(3, 1, 2), timestamp = c(3, 1, 2))
-  expect_message(out <- accelerometery(df, time_col = "timestamp"), "rearranged")
+  expect_message(out <- accelerometery(df, time_col = "timestamp",
+                                       sampling_rate = 1), "rearranged")
   expect_equal(as.numeric(out[, "x"]), c(1, 2, 3))
 })
 
@@ -125,3 +128,4 @@ test_that("validate_accelerometery rejects an invalid start_time", {
   x <- new_accelerometery(matrix(1:6, 3, 2), start_time = c(1, 2))
   expect_error(validate_accelerometery(x), "single POSIXct or positive numeric")
 })
+

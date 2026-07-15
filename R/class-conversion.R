@@ -101,7 +101,7 @@ accelerometery_to_burst <- function(x,
   # split matrix into burst matrices
   starts     <- seq(1L, n_samples, by = burst_size)
   burst_list <- lapply(starts, function(i) {
-    m <- x[i:min(i + burst_size - 1L, n_samples), , drop = FALSE]
+    m <- suppressMessages(x[i:min(i + burst_size - 1L, n_samples), , drop = FALSE])
     attributes(m)[c("sampling_rate", "start_time")] <- NULL
     class(m) <- c("matrix", "array")
     m

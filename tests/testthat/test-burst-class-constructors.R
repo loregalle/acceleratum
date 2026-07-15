@@ -118,7 +118,8 @@ test_that("burst validates df, data_col, and ts_col arguments", {
 
 test_that("burst parses real space-separated burst data from `bench`", {
   data(bench, package = "acceleratum")
-  out <- burst(bench, data_col = "accelerations_raw", ts_col = "timestamp")
+  out <- burst(bench, data_col = "accelerations_raw", ts_col = "timestamp",
+               axes = "xyz")
   expect_s3_class(out, "aclrtm_burst")
   expect_true(is.list(out[["accelerations_raw"]]))
   expect_true(all(vapply(out[["accelerations_raw"]], is.matrix, logical(1))))
@@ -149,6 +150,62 @@ test_that("burst leaves list-of-matrices columns as-is, only fixing colnames", {
   df <- make_burst_df(axes = "xyz")
   out <- burst(df, "burst", axes = "xyz")
   expect_equal(colnames(out$burst[[1]]), c("x", "y", "z"))
+})
+
+test_that("burst infers axes via GCD of vector lengths when axes = NULL", {
+  df <- data.frame(id = 1:2)
+  df$burst <- list(1:12, 1:8) # GCD of 12 and 8 is 2, so infer axes xy
+
+  messages <- character(0)
+  out <- withCallingHandlers(
+    burst(df, "burst"),
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    },
+    # there's also a ragged burst warning that I'd rather test separately
+    # in the next test
+    warning = function(w) {
+      invokeRestart("muffleWarning")
+    }
+  )
+
+  expect_match(messages, "inferred axes = \"xy\"", all = FALSE)
+  expect_equal(length(messages), 1)
+  expect_equal(attr(out, "axes"), "xy")
+})
+
+test_that("Ragged bursts return a warning", {
+  df <- data.frame(id = 1:2)
+  df$burst <- list(1:12, 1:9)
+  expect_warning(out <- burst(df, "burst", "xyz"),
+                 "Ragged bursts")
+})
+
+test_that("burst warns and defaults to axes = 'x' when all bursts are empty", {
+  df <- data.frame(id = 1:2)
+  df$burst <- list(numeric(0), numeric(0))
+
+  warnings <- character(0)
+  messages <- character(0)
+  out <- withCallingHandlers(
+    burst(df, "burst"),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    },
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+
+  expect_match(warnings, "empty; defaulting to axes = \"x", all = FALSE)
+  expect_match(warnings, "^Empty burst.*2\\.$", perl = TRUE, all = FALSE)
+  expect_equal(length(warnings), 2)
+  expect_match(messages, "inferred axes = \"x\"")
+  expect_equal(length(messages), 1)
+  expect_equal(attr(out, "axes"), "x")
 })
 
 ## errors ----

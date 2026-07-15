@@ -68,10 +68,6 @@ tail.aclrtm_accelerometery <- function(x, n = 6L, ...) {
   if (!is.null(st) && !is.null(sr)) {
     st <- st + n_dropped / sr
   } else if (!is.null(st) && is.null(sr)) {
-    message(
-      "Note: sampling rate is not defined. Start time cannot be ",
-      "estimated."
-    )
     st <- NULL
   }
 

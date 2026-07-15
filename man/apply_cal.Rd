@@ -2,35 +2,48 @@
 % Please edit documentation in R/apply-calibration.R
 \name{apply_cal}
 \alias{apply_cal}
+\alias{apply_cal.matrix}
+\alias{apply_cal.aclrtm_burst}
 \title{Apply calibration}
 \usage{
-apply_cal(
+apply_cal(A_sens, S, M, R, b)
+
+\method{apply_cal}{matrix}(
   A_sens,
   S = diag(ncol(A_sens)),
   M = diag(ncol(A_sens)),
   R = diag(ncol(A_sens)),
   b = rep(0, ncol(A_sens))
 )
+
+\method{apply_cal}{aclrtm_burst}(
+  A_sens,
+  S = diag(nchar(attr(A_sens, "axes"))),
+  M = diag(nchar(attr(A_sens, "axes"))),
+  R = diag(nchar(attr(A_sens, "axes"))),
+  b = rep(0, nchar(attr(A_sens, "axes")))
+)
 }
 \arguments{
 \item{A_sens}{Input accelerometery data with axes as columns and samples as
-rows. See details.}
+rows. See details. Can also be an \code{aclrtm_burst} object.}
 
 \item{S}{The scale factor diagonal matrix (can be provided as a vector)}
 
 \item{M}{The misalignment matrix}
 
 \item{R}{A rotation matrix to account for a sensor mounted "flipped"
-around one or two axes (e.g. a collar mounted backwards).
+around one or two axes (e.g. a device mounted upside down).
 Can be provided as diagonal matrix or numeric vector of 1s and -1s,
 or a character vector or character string of axes to flip around.}
 
 \item{b}{The bias vector}
 }
 \value{
-An \code{aclrtm_accelerometery} object containing the calibrated data
-\eqn{A_{true}^T}, with the same dimensions and - if available -
-sampling rate and start time as the input \code{A_sens}.
+An \code{aclrtm_accelerometery} or \code{aclrtm_burst} object containing the
+calibrated data \eqn{A_{true}^T}. If \code{A_sens} was provided as \code{aclrtm_burst},
+the output object will have the calibrated (burst) data in place of the
+original data column.
 }
 \description{
 Apply calibration to raw data
