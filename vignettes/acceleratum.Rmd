@@ -1,11 +1,12 @@
 ---
 title: "`acceleratum` package overview"
 output:
-  rmarkdown::html_vignette:
-    fig_width: 7
-    fig_height: 6
+  rmarkdown::pdf_document:
+    fig_width: 6
+    fig_height: 3
     toc: true
     number_sections: true
+    extra_dependencies: ["framed"]
 vignette: >
   %\VignetteIndexEntry{acceleratum package overview}
   %\VignetteEngine{knitr::rmarkdown}
@@ -13,6 +14,8 @@ vignette: >
 ---
 
 ```{css, echo = FALSE}
+/* Retained from previous html version. Keep in case I feel like switching
+back */
 .help-file {
   outline-style: dashed;
   outline-color: #aaa;
@@ -102,7 +105,7 @@ acc <- accelerometery(some_data_df)
 head(acc)
 ```
 
-```{r, fig.height=6, fig.width=6}
+```{r}
 # Plotting method fo aclrtm_accelerometery objects
 plot(acc)
 ```
@@ -162,13 +165,31 @@ data(bench) # some data in burst format
 
 An extract from `help(bench)`:
 ```{r, echo = FALSE, class.output="help-file"}
+html_to_latex <- function(html_string) {
+  infile <- tempfile(fileext = ".html")
+  outfile <- tempfile(fileext = ".tex")
+  on.exit(unlink(c(infile, outfile)), add = TRUE)
+  
+  writeLines(html_string, infile)
+  rmarkdown::pandoc_convert(input = infile, from = "html", to = "latex", output = outfile)
+  paste(readLines(outfile), collapse = "\n")
+}
+
 outfile <- tempfile(fileext = ".html")
 tools:::Rd2HTML("../man/bench.Rd", out = outfile)
 rawHTML <- paste(readLines(outfile), collapse="\n")
+unlink(outfile)
 rawHTML <- gsub(".*(The <code>accelerations_raw.*burst\\.).*", "\\1", rawHTML)
 rawHTML <- paste0('<div class="help-file">', rawHTML, '</div>')
-knitr::asis_output(htmltools::htmlPreserve(rawHTML))
-unlink(outfile)
+rawLatex <- html_to_latex(rawHTML)
+rawLatex <- paste0("\n", rawLatex)
+knitr::asis_output(
+  paste0(
+    "\n\\begin{framed}\n",
+    rawLatex,
+    "\n\\end{framed}"
+  )
+)
 ```
 
 ```{r}
@@ -240,15 +261,16 @@ locally
 bench_annotations <- segment_select(acc)
 ```
 
-![](./help_images/seg_select_01.png){width=7in}
+![](./help_images/seg_select_01.png){width=4in}  
+
 The user can click and drag to select (horizontal) segments of interest
 and label them  
 
-![](./help_images/seg_select_02.png){width=7in}
+![](./help_images/seg_select_02.png){width=4in}  
 
 Then repeat for all other segments.  
 
-![](./help_images/seg_select_03.png){width=7in}
+![](./help_images/seg_select_03.png){width=4in}  
 
 Click "Done" to close the app and output the result. For ease of use,
 we included a small dataset of annotations taken with `segment_select()` on
