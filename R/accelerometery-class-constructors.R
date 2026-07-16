@@ -116,7 +116,7 @@ validate_accelerometery <- function(x) {
 #' @param start_time Either a positive real number, a \code{POSIXct} scalar,
 #' or \code{NULL} (default).
 #' @param ... Additional arguments passed to the appropriate method.
-#' @param time_col Optional character vector of length 1 specifying the
+#' @param ts_col Optional character vector of length 1 specifying the
 #'   time column. It can also be an integer specifying the column index.
 #' @details \code{aclrtm_accelerometery} is a utility class that can be used to
 #'   work with (tri)axial accelerometery data in a consistent fashion within the
@@ -137,11 +137,11 @@ validate_accelerometery <- function(x) {
 #'   If the argument \code{axes} was provided and column names were
 #'   already present, \code{axes} takes precedence and throws a warning.
 #'
-#'   If \code{x} is a data frame and argument \code{time_col} has been provided,
+#'   If \code{x} is a data frame and argument \code{ts_col} has been provided,
 #'   \code{start_time} and \code{sampling_rate} will be estimated from
-#'   \code{time_col}. \code{time_col} also takes precedence over
+#'   \code{ts_col}. \code{ts_col} also takes precedence over
 #'   \code{start_time} (if provided), but not over \code{sampling_rate}
-#'   (if provided). If more than 3 numeric columns (excluding \code{time_col})
+#'   (if provided). If more than 3 numeric columns (excluding \code{ts_col})
 #'   are present in \code{x}, the argument \code{axes} must be provided and
 #'   those columns must be present in \code{x}.
 #'   With 3 or fewer numeric columns, column names will be retained if they are
@@ -159,7 +159,7 @@ validate_accelerometery <- function(x) {
 #'   concern to the user, we recommend two approaches:
 #'   \enumerate{
 #'     \item If memory allows, most functions within the \code{acceleratum}
-#'       package work with data frames as input and a time_col specification
+#'       package work with data frames as input and a ts_col specification
 #'       (as needed).
 #'     \item It might be preferred to store the timestamp vector elsewhere
 #'       to have it re-added to the data once most operations are performed.
@@ -195,11 +195,11 @@ validate_accelerometery <- function(x) {
 #'                 timestamp = as.POSIXct(seq(.5,2,.5), tz = "UTC"))
 #'
 #' ## start_time and sampling_rate inferred from the timestamp column
-#' accelerometery(x, time_col = "timestamp")
+#' accelerometery(x, ts_col = "timestamp")
 #'
 #' ## if sampling rate is known from device settings,
 #' ## providing it manually overrides inference.
-#' accelerometery(x, sampling_rate = 5, time_col = "timestamp")
+#' accelerometery(x, sampling_rate = 5, ts_col = "timestamp")
 #'
 #' @export
 
@@ -321,54 +321,54 @@ accelerometery.data.frame <- function(x,
                                       axes          = NULL,
                                       sampling_rate = NULL,
                                       start_time    = NULL,
-                                      time_col      = NULL,
+                                      ts_col        = NULL,
                                       ...) {
 
   if (!is.data.frame(x)) stop("`x` must be a data frame.")
 
   # handle time column
-  if (!is.null(time_col)) {
+  if (!is.null(ts_col)) {
 
-    # resolve time_col to a column name
-    if (is.numeric(time_col)) {
-      if (time_col < 1L || time_col > ncol(x)) {
-        stop("`time_col` index (", time_col, ") is out of range [1, ",
+    # resolve ts_col to a column name
+    if (is.numeric(ts_col)) {
+      if (ts_col < 1L || ts_col > ncol(x)) {
+        stop("`ts_col` index (", ts_col, ") is out of range [1, ",
              ncol(x), "].")
       }
-      time_col <- names(x)[time_col]
-    } else if (!is.character(time_col) || length(time_col) != 1L) {
-      stop("`time_col` must be a single column name or integer index.")
-    } else if (!time_col %in% names(x)) {
-      stop("Column '", time_col, "' not found in `x`.")
+      ts_col <- names(x)[ts_col]
+    } else if (!is.character(ts_col) || length(ts_col) != 1L) {
+      stop("`ts_col` must be a single column name or integer index.")
+    } else if (!ts_col %in% names(x)) {
+      stop("Column '", ts_col, "' not found in `x`.")
     }
 
-    t_vals <- x[[time_col]]
+    t_vals <- x[[ts_col]]
 
     t_sec <- as.numeric(t_vals)
     diffs <- diff(t_sec)
 
     if (any(diffs < 0)) {
       message(
-        "Note: input data is not ordered by '", time_col, "' and it will ",
+        "Note: input data is not ordered by '", ts_col, "' and it will ",
         "be rearranged."
       )
       x <- x[order(t_sec),]
-      t_vals <- x[[time_col]]
+      t_vals <- x[[ts_col]]
     }
 
     # validate time column type
     if (!is.numeric(t_vals) && !inherits(t_vals, "POSIXct") &&
         !inherits(t_vals, "POSIXlt")) {
       stop(
-        "The time column ('", time_col, "') must be numeric or POSIXct/POSIXlt."
+        "The time column ('", ts_col, "') must be numeric or POSIXct/POSIXlt."
       )
     }
 
     # derive start_time if not explicitly provided
     if (!is.null(start_time)) {
       message(
-        "Note: the argument `start_time` is ignored when `time_col` is ",
-        "defined and it will be set to the lowest value of `time_col`."
+        "Note: the argument `start_time` is ignored when `ts_col` is ",
+        "defined and it will be set to the lowest value of `ts_col`."
       )
     }
     st_raw <- min(t_vals, na.rm = TRUE)
@@ -397,7 +397,7 @@ accelerometery.data.frame <- function(x,
     }
 
     # drop the time column from the data frame before continuing
-    x <- x[, setdiff(names(x), time_col), drop = FALSE]
+    x <- x[, setdiff(names(x), ts_col), drop = FALSE]
   }
 
   # select acceleration columns

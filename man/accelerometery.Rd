@@ -18,7 +18,7 @@ accelerometery(x, axes = NULL, sampling_rate = NULL, start_time = NULL, ...)
   axes = NULL,
   sampling_rate = NULL,
   start_time = NULL,
-  time_col = NULL,
+  ts_col = NULL,
   ...
 )
 }
@@ -36,7 +36,7 @@ or \code{NULL} (default).}
 
 \item{...}{Additional arguments passed to the appropriate method.}
 
-\item{time_col}{Optional character vector of length 1 specifying the
+\item{ts_col}{Optional character vector of length 1 specifying the
 time column. It can also be an integer specifying the column index.}
 }
 \value{
@@ -71,11 +71,11 @@ return the same data structure with attached attributes (if provided).
 If the argument \code{axes} was provided and column names were
 already present, \code{axes} takes precedence and throws a warning.
 
-If \code{x} is a data frame and argument \code{time_col} has been provided,
+If \code{x} is a data frame and argument \code{ts_col} has been provided,
 \code{start_time} and \code{sampling_rate} will be estimated from
-\code{time_col}. \code{time_col} also takes precedence over
+\code{ts_col}. \code{ts_col} also takes precedence over
 \code{start_time} (if provided), but not over \code{sampling_rate}
-(if provided). If more than 3 numeric columns (excluding \code{time_col})
+(if provided). If more than 3 numeric columns (excluding \code{ts_col})
 are present in \code{x}, the argument \code{axes} must be provided and
 those columns must be present in \code{x}.
 With 3 or fewer numeric columns, column names will be retained if they are
@@ -93,7 +93,7 @@ ignoring possible timing drift for the logger device. If that is of
 concern to the user, we recommend two approaches:
 \enumerate{
 \item If memory allows, most functions within the \code{acceleratum}
-package work with data frames as input and a time_col specification
+package work with data frames as input and a ts_col specification
 (as needed).
 \item It might be preferred to store the timestamp vector elsewhere
 to have it re-added to the data once most operations are performed.
@@ -128,10 +128,10 @@ x <- data.frame(x = 1:4,
                 timestamp = as.POSIXct(seq(.5,2,.5), tz = "UTC"))
 
 ## start_time and sampling_rate inferred from the timestamp column
-accelerometery(x, time_col = "timestamp")
+accelerometery(x, ts_col = "timestamp")
 
 ## if sampling rate is known from device settings,
 ## providing it manually overrides inference.
-accelerometery(x, sampling_rate = 5, time_col = "timestamp")
+accelerometery(x, sampling_rate = 5, ts_col = "timestamp")
 
 }

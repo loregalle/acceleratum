@@ -15,7 +15,8 @@ A data frame with 6 rows and 5 columns:
 }
 }
 \source{
-Collected by the package authors interactively using \code{\link[=range_select]{range_select()}}
+Collected by the package authors interactively using
+\code{\link[=segment_select]{segment_select()}}
 }
 \usage{
 bench_annotations

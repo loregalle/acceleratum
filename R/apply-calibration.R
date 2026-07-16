@@ -208,7 +208,8 @@ apply_cal.aclrtm_burst <- function(A_sens,
   if (!is(A_sens, "aclrtm_burst")) {
     stop("`A_sens` must be an `aclrtm_burst` object", call. = FALSE)
   }
-  nc <- nchar(attr(A_sens, "axes"))
+  axes <- .parse_axes(attr(A_sens, "axes"))
+  nc <- length(axes)
   if (nc < 1L || nc > 3L) {
     stop("`A_sens` must have 1, 2, or 3 columns (found ", nc, ").",
          call. = FALSE)
@@ -270,7 +271,7 @@ apply_cal.aclrtm_burst <- function(A_sens,
       flip_around <- R
     }
     # check axes are present in A_sens
-    missing_axes <- setdiff(flip_around, colnames(A_sens))
+    missing_axes <- setdiff(flip_around, axes)
     if (length(missing_axes) > 0L) {
       stop("Axis/axes to flip around not found in `A_sens`: ",
            paste(missing_axes, collapse = ", "), ".", call. = FALSE)
@@ -284,11 +285,11 @@ apply_cal.aclrtm_burst <- function(A_sens,
       if (length(flip_around) == 2L) {
         axes_to_flip <- flip_around
       } else {
-        axes_to_flip <- setdiff(colnames(A_sens), flip_around)
+        axes_to_flip <- setdiff(axes, flip_around)
       }
 
       diag_vals <- rep(1, nc)
-      names(diag_vals) <- colnames(A_sens)
+      names(diag_vals) <- axes
       diag_vals[axes_to_flip] <- -1L
       R <- diag(diag_vals)
     }

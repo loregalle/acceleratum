@@ -36,7 +36,7 @@
 #' @export
 vmf_kde <- function(m,
                     n_grid = 1440L,
-                    kappa = 4,
+                    kappa = 10,
                     normalise = TRUE,
                     weights = 1,
                     norm_filter = 1e-10) {
@@ -355,8 +355,9 @@ rotation_to_align <- function(m,
 #' @param R Rotation matrix such as output of [rotation_to_align()].
 #'   Transposed internally. See details.
 #' @returns Rotated matrix
-#' @details In mathematical convention, vectors are column vectors and a
-#'   rotation matrix \eqn{R} transforms a vector \eqn{\mathbf{v}} to its
+#' @details In mathematical convention, a vector \eqn{\mathbf{v}}
+#'   is a column vector and a
+#'   rotation matrix \eqn{R} transforms it to its
 #'   rotated equivalent \eqn{\mathbf{v'}} via:
 #'   \deqn{\mathbf{v'} = R\mathbf{v}}
 #'   However, data matrices conventionally store observations as rows rather

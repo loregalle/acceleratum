@@ -189,7 +189,6 @@ plot.aclrtm_accelerometery <- function(x, y, axes = "xyz", ...) {
 
   # shared x and title labels
   graphics::mtext(x_label, side = 1, outer = TRUE, line = 1.5)
-  graphics::mtext("Accelerometery", side = 3, outer = TRUE, line = 0.5)
 
   invisible(x)
 }

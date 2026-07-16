@@ -39,10 +39,14 @@ runs the Xu et al. (2021) six-position closed-form calibration.}
 \item{verbose}{If true, prints information for each iteration.}
 }
 \value{
-A named list. For the generic branches: \code{M}, \code{Minv},
-\code{bias}, \code{seg_means}, \code{iters}, \code{dP_hist}. For the
-tilt branch: \code{S}, \code{M}, \code{bias}, \code{seg_means},
-\code{iters}, \code{e0_hist}, \code{params_xu}.
+A named list with:
+\itemize{
+\item{S: the scaling factor diagonal matrix}
+\item{M: the misalignment matrix}
+\item{bias: the bias vector}
+\item{iters: number of iterations}
+\item{deltaP: final convergence metric}
+}
 }
 \description{
 Consolidates diagonal, full-misalignment, and Xu et al. (2021)

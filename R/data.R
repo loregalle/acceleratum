@@ -37,5 +37,33 @@
 #'   \item{imax}{Row index of the end of each segment}
 #' }
 #'
-#' @source Collected by the package authors interactively using [range_select()]
+#' @source Collected by the package authors interactively using
+#'   [segment_select()]
 "bench_annotations"
+
+#' Muskox Accelerometery Data
+#'
+#' About 6 days of triaxial accelerometery data from a device mounted on a
+#' collar and deployed on a muskox in Zackenberg Research Station, Greenland.
+#' Sampling rate is fixed at 8 Hz.
+#'
+#' @format A data frame with 100001 rows and 3 columns:
+#' \describe{
+#'   \item{timestamp}{A \code{POSIXct} column of time stamps}
+#'   \item{acceleration_axes}{A specification for the axes collected}
+#'   \item{accelerations_raw}{Character vector of raw acceleration data in burst
+#'     format (see details).}
+#' }
+#'
+#' @details The `accelerations_raw` column stores the data in bursts as a
+#' single space-separated character string, with axis measurements
+#' interleaved in repeating x, y, z order:
+#'
+#' ```
+#' "x1 y1 z1 x2 y2 z2 ... xn yn zn"
+#' ```
+#'
+#' where `n` is the number of samples in that burst.
+#'
+#' @source Data collected by the package authors
+"muskox"

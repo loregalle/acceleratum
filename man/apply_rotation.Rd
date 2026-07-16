@@ -19,8 +19,9 @@ Rotated matrix
 Rotate the data according to a rotation matrix
 }
 \details{
-In mathematical convention, vectors are column vectors and a
-rotation matrix \eqn{R} transforms a vector \eqn{\mathbf{v}} to its
+In mathematical convention, a vector \eqn{\mathbf{v}}
+is a column vector and a
+rotation matrix \eqn{R} transforms it to its
 rotated equivalent \eqn{\mathbf{v'}} via:
 \deqn{\mathbf{v'} = R\mathbf{v}}
 However, data matrices conventionally store observations as rows rather

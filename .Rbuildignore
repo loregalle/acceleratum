@@ -7,3 +7,6 @@
 ^\.claude$
 ^dev$
 ^data-raw$
+^doc$
+^Meta$
+^vignettes/help_images$

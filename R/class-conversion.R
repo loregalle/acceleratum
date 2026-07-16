@@ -7,9 +7,9 @@
 #' supplied.
 #'
 #' @param x           An \code{aclrtm_accelerometery} object.
-#' @param burst_length Numeric scalar. Duration of each burst in seconds.
+#' @param burst_length Duration of each burst in seconds.
 #'   Takes precedence over \code{burst_size} when both are supplied.
-#' @param burst_size  Integer scalar. Number of samples per burst. Used only
+#' @param burst_size  Number of samples per burst. Used only
 #'   when \code{burst_length} is \code{NULL}.
 #' @param ts_col      Name of the timestamp column in the output.
 #'   Defaults to \code{"timestamp"}.

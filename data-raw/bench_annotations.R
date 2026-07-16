@@ -10,6 +10,6 @@ bench_annotations <- read.csv("data-raw/bench_annotations.csv")
 # data(bench)
 # bench <- burst(bench, "accelerations_raw", "xyz", "timestamp")
 # bench <- burst_to_accelerometery(bench)
-# bench_annotations <- range_select(bench)
+# bench_annotations <- segment_select(bench)
 
 usethis::use_data(bench_annotations, overwrite = TRUE)

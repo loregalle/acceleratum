@@ -68,8 +68,6 @@ process_annotations <- function(acc, annotations, g = 1) {
   n   <- nrow(annotations)
   out <- vector("list", n)
 
-  message("Processing ", n, " annotations.")
-
   for (i in seq_len(n)) {
     r <- annotations[i, ]
 
@@ -113,7 +111,6 @@ process_annotations <- function(acc, annotations, g = 1) {
         gvec <- user_gvec / nrm * g
       }
     }
-    # else: gvec stays NULL -> resolved from data during calibration
 
     out[[i]] <- list(data = seg, mean = m, glabel = glabel, gvec = gvec)
   }
@@ -185,12 +182,15 @@ process_annotations <- function(acc, annotations, g = 1) {
 #'   \code{seg_means}, \code{iters}, \code{dP_hist}.
 #' @noRd
 .cal_ls <- function(seg_list, g, diagonal_only, estimate_bias,
-                        max_iter, tol, verbose) {
+                    max_iter, tol, verbose) {
 
   n <- length(seg_list)
-  if (n < 3L) {
-    stop("Insufficient segments for calibration (need at least 3, got ",
-         n, ").", call. = FALSE)
+  nparam <- if (diagonal_only) 3L else 9L
+  if (estimate_bias) nparam <- nparam + 3
+
+  if (n < ceiling(nparam/3)) {
+    stop("Insufficient segments for calibration (need at least ",
+    ceiling(nparam/3), " got ", n, ").", call. = FALSE)
   }
 
   M_combined <- diag(3)
@@ -352,13 +352,11 @@ process_annotations <- function(acc, annotations, g = 1) {
     X_curr <- c(SFx, SFy, SFz, bx, by, bz,
                 t_xy, t_xz, t_yx, t_yz, t_zx, t_zy, beta)
 
-    if (it > 1L) {
-      e0      <- max(abs(X_curr - X_prev))
-      if (verbose) {
-        message(sprintf("  [Xu] iter %4d: deltaP = %.4e", it, e0))
-      }
-      if (e0 < tol) break
+    e0      <- max(abs(X_curr - X_prev))
+    if (verbose) {
+      message(sprintf("  [Xu] iter %4d: deltaP = %.4e", it, e0))
     }
+    if (e0 < tol) break
 
     X_prev <- X_curr
   }
@@ -371,10 +369,9 @@ process_annotations <- function(acc, annotations, g = 1) {
     sin(t_zy), -cos(t_zy) * sin(t_zx),  cos(t_zx) * cos(t_zy)
   ), nrow = 3L, byrow = TRUE)
 
-  S_xu <- diag(c(SFx, SFy, SFz)) %*% A_sb
+  S    <- diag(c(SFx, SFy, SFz))
   M    <- A_sb
-  S    <- c(SFx, SFy, SFz)
-  bias <- c(bx, by, bz)
+  bias <- unname(c(bx, by, bz))
 
   .deg <- function(r) r * 180 / pi
 
@@ -384,7 +381,7 @@ process_annotations <- function(acc, annotations, g = 1) {
     bias      = bias,            # bias vector
     iters     = iters,
     deltaP    = if (length(e0) > 0) e0 else 0,
-    beta_deg  = .deg(beta)
+    beta_deg  = unname(.deg(beta))
   )
 }
 
@@ -409,10 +406,14 @@ process_annotations <- function(acc, annotations, g = 1) {
 #' @param tol Convergence tolerance.
 #' @param verbose If true, prints information for each iteration.
 #'
-#' @returns A named list. For the generic branches: \code{M}, \code{Minv},
-#'   \code{bias}, \code{seg_means}, \code{iters}, \code{dP_hist}. For the
-#'   tilt branch: \code{S}, \code{M}, \code{bias}, \code{seg_means},
-#'   \code{iters}, \code{e0_hist}, \code{params_xu}.
+#' @returns A named list with:
+#'   \itemize{
+#'     \item{S: the scaling factor diagonal matrix}
+#'     \item{M: the misalignment matrix}
+#'     \item{bias: the bias vector}
+#'     \item{iters: number of iterations}
+#'     \item{deltaP: final convergence metric}
+#'   }
 #'
 #' @references Xu, T., Xu, X., Xu, D., Zhao, H., 2021. A Novel Calibration
 #' Method Using Six Positions for MEMS Triaxial Accelerometer. IEEE

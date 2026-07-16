@@ -24,10 +24,10 @@ a2b(
 \arguments{
 \item{x}{An \code{aclrtm_accelerometery} object.}
 
-\item{burst_length}{Numeric scalar. Duration of each burst in seconds.
+\item{burst_length}{Duration of each burst in seconds.
 Takes precedence over \code{burst_size} when both are supplied.}
 
-\item{burst_size}{Integer scalar. Number of samples per burst. Used only
+\item{burst_size}{Number of samples per burst. Used only
 when \code{burst_length} is \code{NULL}.}
 
 \item{ts_col}{Name of the timestamp column in the output.

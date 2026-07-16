@@ -13,12 +13,10 @@ write_burst(x, filename, writer = utils::write.csv, sep = " ", ...)
 
 \item{writer}{A writing function that accepts a data.frame as its first
 argument and a file path as its second (e.g. \code{write.csv},
-\code{write.table}, \code{readr::write_csv}, \code{data.table::fwrite}).
-Defaults to \code{write.csv}.}
+\code{write.table}, \code{readr::write_csv}, \code{data.table::fwrite}).}
 
 \item{sep}{Separator used when collapsing each burst vector back to a
-string. Should match the \code{sep} used when the object was
-created so the file round-trips cleanly. Defaults to \code{","}.}
+string.}
 
 \item{...}{Additional arguments forwarded to \code{writer}.}
 }
