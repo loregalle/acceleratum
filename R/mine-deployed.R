@@ -9,10 +9,10 @@
 #' window samples are written to a fixed-record scratch binary file for
 #' later retrieval by slot offset.
 #'
-#' @param path Path to the burst-format CSV file.
+#' @param object burst object or path to a burst-format CSV file.
 #' @param data_col Name of the column holding burst data cells.
 #' @param ts_col Name of the column holding per-row timestamps.
-#' @param axes Axis specification, parsed via \code{.parse_axes()}.
+#' @param axes Axis specification.
 #' @param window_sec Sliding window length in seconds.
 #' @param sr Nominal sampling rate (Hz). If \code{NULL}, estimated as the
 #'   median per-row rate over the first chunk.
@@ -25,8 +25,8 @@
 #' @param reservoir_size Maximum number of windows retained.
 #' @param slot_size Fixed sample capacity per scratch-file record; estimated
 #'   from \code{window_sec} and \code{sr} if \code{NULL}.
-#' @param scratch_path Path for the scratch binary file (must not exist).
-#' @param rng_seed RNG seed for reservoir sampling.
+#' @param scratch_path Path for the scratch binary file.
+#' @param rng_seed rng seed for repeatability purposes.
 #' @param chunk_size Rows read per chunk.
 #' @param delim CSV delimiter.
 #' @param sep Separator used within burst data cells.
@@ -36,10 +36,10 @@
 #'   scratch file path/slot size needed for reconstruction, and mining
 #'   metadata (\code{nominal_sr}, \code{axes}, etc).
 #' @export
-mine_reservoir <- function(path,
-                           data_col,
-                           ts_col,
-                           axes,
+mine_reservoir <- function(object,
+                           data_col = NULL,
+                           ts_col = NULL,
+                           axes = NULL,
                            window_sec = 5,
                            sr = NULL,
                            sr_tol = 0.5,
@@ -49,7 +49,7 @@ mine_reservoir <- function(path,
                            min_samples_per_window = 3,
                            reservoir_size = 80000,
                            slot_size = NULL,
-                           scratch_path = "tmp",
+                           scratch_path = "./tmp",
                            rng_seed = 42,
                            chunk_size = 10000,
                            delim = ",",
@@ -64,6 +64,40 @@ mine_reservoir <- function(path,
       ),
       scratch_path
     ), call. = FALSE)
+  }
+
+  if (!is(object) == "aclrtm_burst" &&
+      !(is.character(object) && length(object) == 1)) {
+    stop("`object` must be either an `aclrtm_burst` class object ",
+         "or a valid path to a file containing burst-like formatted data.")
+  }
+
+  # if burst object, extract attributes
+  if (is(object) == "aclrtm_burst") {
+    if (is.null(data_col)) {
+      data_col <- attr(object, "data_col")
+    }
+
+    if (is.null(ts_col)) {
+      ts_col <- attr(object, "ts_col")
+    }
+
+    if (is.null(axes)) {
+      axes <- attr(bench, "axes")
+    }
+  }
+
+  # check for data_col and ts_col
+  if (is.null(data_col)) {
+    stop("`data_col` not defined.")
+  }
+
+  if (is.null(ts_col)) {
+    stop("`ts_col` not defined.")
+  }
+
+  if (is.null(axes)) {
+    stop("`axes` not defined.")
   }
 
   axes_chr <- .parse_axes(axes)
@@ -102,7 +136,7 @@ mine_reservoir <- function(path,
   state$record_size_bytes <- NULL
   state$scratch_path      <- scratch_path
   state$n_axes            <- n_axes
-  state$bootstrap_needed  <- is.null(sr)
+  state$bootstrap_needed  <- is.null(sr) # should nominal_sr be estimated
 
   finalize_setup <- function() {
     if (is.null(state$slot_size)) {
@@ -130,10 +164,20 @@ mine_reservoir <- function(path,
   if (!state$bootstrap_needed) finalize_setup()
 
   process_chunk <- function(chunk, pos) {
-    ts_chr  <- chunk[[ts_col]]
-    dat_chr <- chunk[[data_col]]
-    n_rows  <- length(ts_chr)
+
+    n_rows <- nrow(chunk)
     if (n_rows == 0L) return(invisible(NULL))
+
+    # burst data to matrix
+    if (is(object) == "aclrtm_burst") {
+      mats <- chunk[[data_col]]
+    } else {
+      dat_chr <- chunk[[data_col]]
+      mats <- lapply(dat_chr, .parse_burst_string, n_axes = n_axes, sep = sep)
+    }
+
+    n_rows  <- length(mats)
+    ts_chr  <- chunk[[ts_col]]
 
     # Timestamp column to numeric seconds. Tries "already numeric" first
     # (e.g. unix seconds), falls back to POSIXct string parsing.
@@ -144,8 +188,7 @@ mine_reservoir <- function(path,
       ts_num <- as.numeric(as.POSIXct(ts_chr, tz = tz))
     }
 
-    mats <- lapply(dat_chr, .parse_burst_string, n_axes = n_axes, sep = sep)
-
+    # if sr is not defined, estimate nominal_sr from first chunk
     if (state$bootstrap_needed) {
       sr_vals <- numeric(0)
       if (n_rows >= 2L) {
@@ -181,6 +224,7 @@ mine_reservoir <- function(path,
       finalize_setup()
     }
 
+    # process chunk rows
     for (i in seq_len(n_rows)) {
       state$row_counter <- state$row_counter + 1L
       current <- list(ts = ts_num[i],
@@ -197,20 +241,25 @@ mine_reservoir <- function(path,
     invisible(NULL)
   }
 
-  col_types <- do.call(
-    readr::cols_only,
-    stats::setNames(list(readr::col_character(),
-                         readr::col_character()),
-                    c(ts_col, data_col))
-  )
+  if (is(object) == "aclrtm_burst") {
+    process_chunk(object)
+  } else if (is.character(object) && length(object == 1)) {
 
-  readr::read_delim_chunked(
-    file      = path,
-    delim     = delim,
-    col_types = col_types,
-    callback  = readr::SideEffectChunkCallback$new(process_chunk),
-    chunk_size = chunk_size
-  )
+    col_types <- do.call(
+      readr::cols_only,
+      stats::setNames(list(readr::col_character(),
+                           readr::col_character()),
+                      c(ts_col, data_col))
+    )
+
+    readr::read_delim_chunked(
+      file      = object,
+      delim     = delim,
+      col_types = col_types,
+      callback  = readr::SideEffectChunkCallback$new(process_chunk),
+      chunk_size = chunk_size
+    )
+  }
 
   # The very last row of the file has no successor; timestamp it using the
   # file's nominal sampling rate directly.
@@ -369,6 +418,7 @@ reconstruct_selected <- function(reservoir, selected_idx,
 
       out[[k]] <- list(timestamp = ts[seq_len(n)],
                        data = raw_mat,
+                       mean = apply(raw_mat, 2, mean),
                        source_row = row_id[seq_len(n)])
     }
     out
@@ -386,7 +436,7 @@ reconstruct_selected <- function(reservoir, selected_idx,
 #' Convenience wrapper chaining \code{mine_reservoir()},
 #' \code{select_fps()}, and \code{reconstruct_selected()}.
 #'
-#' @param path,data_col,ts_col,axes,window_sec,... Passed to
+#' @param object,data_col,ts_col,axes,window_sec,... Passed to
 #'   [mine_reservoir()].
 #' @param k Number of orientations to select.
 #' @param restarts,rng_seed Passed to [select_fps()].
@@ -396,11 +446,11 @@ reconstruct_selected <- function(reservoir, selected_idx,
 #' @return A list with FPS-selected \code{orientations}, their raw mean
 #'   vectors (\code{means_raw}), and reconstructed raw \code{windows}.
 #' @export
-mine_and_select <- function(path, data_col, ts_col, axes, window_sec, k,
+mine_and_select <- function(object, data_col, ts_col, axes, window_sec, k,
                             restarts = 8, rng_seed = 42,
                             delete_scratch = TRUE, ...) {
   reservoir <- mine_reservoir(
-    path = path, data_col = data_col, ts_col = ts_col, axes = axes,
+    object = object, data_col = data_col, ts_col = ts_col, axes = axes,
     window_sec = window_sec, rng_seed = rng_seed, ...
   )
   fps     <- select_fps(reservoir, k = k, restarts = restarts,

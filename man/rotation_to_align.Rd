@@ -5,7 +5,7 @@
 \title{Rotation matrix}
 \usage{
 rotation_to_align(
-  m,
+  x,
   align_to,
   align_secondary = NULL,
   secondary_policy = c("max", "min"),
@@ -15,26 +15,51 @@ rotation_to_align(
 )
 }
 \arguments{
-\item{m}{matrix}
+\item{x}{matrix}
 
-\item{align_to}{placeholder}
+\item{align_to}{Target direction to rotate the density peak to; either a
+character string giving a signed axis (e.g. \code{"+x"}, \code{"-z"})
+or a numeric vector of length equal to the number of rotation axes.}
 
-\item{align_secondary}{placeholder}
+\item{align_secondary}{Optional target direction for a secondary
+alignment (same format as \code{align_to}), used to additionally
+orient the rotation around the primary axis in the 3D case.}
 
 \item{secondary_policy}{Policy for the alignment of the secondary axis.
-Ignored if \code{secondary_policy} is \code{NULL}. See details.}
+Ignored if \code{align_secondary = NULL}. See details.}
 
-\item{fixed_ax}{placeholder}
+\item{fixed_ax}{Optional character string (\code{"x"}, \code{"y"}, \code{"z"})
+naming an axis to hold fixed, restricting the rotation to
+the remaining two axes. Ignored for 2-column input.}
 
-\item{n_grid}{passed to \code{\link[=vmf_kde]{vmf_kde()}}. If null, defaults to 129600 for the 3D
+\item{n_grid}{passed to \code{\link[=vmf_kde]{vmf_kde()}}. If null, defaults to 4320 for the 3D
 case and 1440 for the 2D case.}
 
 \item{...}{other arguments passed to \code{\link[=vmf_kde]{vmf_kde()}}}
 }
 \value{
-Rotation matrix
+A rotation matrix
 }
 \description{
 Return a rotation matrix that aligns the density peak in the sample to
 the a specified direction.
+}
+\details{
+The rotation is derived from the empirical directional density of
+\code{x}, estimated via \code{\link[=vmf_kde]{vmf_kde()}} on the sphere (3D) or
+circle (2D). The direction of peak density is identified and a rotation
+matrix is constructed that maps this peak to \code{align_to}: via
+Rodrigues' rotation formula in the 3D case, or a Givens rotation in the
+2D case.
+
+If \code{align_secondary} is supplied (3D only), a second density is
+estimated on the plane perpendicular to the primary peak direction,
+and the direction of max (or min, depending on \code{secondary_policy})
+density within that plane
+is aligned to \code{align_secondary}. This additionally constrains
+rotation about the primary axis, which is otherwise left unspecified
+when only \code{align_to} is provided.
+}
+\seealso{
+\code{\link[=vmf_kde]{vmf_kde()}} \code{\link[=apply_rotation]{apply_rotation()}}
 }

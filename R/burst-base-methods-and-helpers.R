@@ -27,13 +27,13 @@ print.aclrtm_burst <- function(x, n = 10L, ...) {
   axes     <- attr(x, "axes")
   nr       <- nrow(x)
 
-  cat(sprintf("<aclrtm_burst>  [%d rows x %d cols]\n", nr, ncol(x)))
-  cat(sprintf("  data_col : \"%s\"\n", data_col))
-  cat(sprintf("  axes     : \"%s\"\n", axes))
+  cat(sprintf("<aclrtm_burst>  [%d rows x %d cols]", nr, ncol(x)))
+  cat(sprintf("\n  data_col : \"%s\"", data_col))
+  cat(sprintf("\n  axes     : \"%s\"", axes))
   if (!is.null(ts_col)) {
-    cat(sprintf("  ts_col   : \"%s\"\n", ts_col))
+    cat(sprintf("\n  ts_col   : \"%s\"", ts_col))
   } else {
-    cat("  ts_col   : (none)\n")
+    cat("\n  ts_col   : (none)")
   }
   cat("\n")
 

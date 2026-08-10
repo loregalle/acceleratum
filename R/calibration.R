@@ -193,7 +193,7 @@ process_annotations <- function(acc, annotations, g = 1) {
     ceiling(nparam/3), " got ", n, ").", call. = FALSE)
   }
 
-  M_combined <- diag(3)
+  K <- diag(3)
   b <- rep(0, 3)
 
   fixed_gvec <- lapply(seg_list, function(s) s$gvec)  # NULL where unknown
@@ -208,7 +208,7 @@ process_annotations <- function(acc, annotations, g = 1) {
 
   for (it in seq_len(max_iter)) {
     for (i in free_idx) {
-      mcorr <- solve(M_combined, rows[[i]]$m - b)
+      mcorr <- solve(K, rows[[i]]$m - b)
       nrm   <- sqrt(sum(mcorr^2)) + 1e-12
       rows[[i]]$gvec <- mcorr / nrm * g
     }
@@ -219,28 +219,28 @@ process_annotations <- function(acc, annotations, g = 1) {
     if (diagonal_only) {
       scales_new <- fit[1:3]
       b_new      <- if (estimate_bias) fit[4:6] else rep(0, 3)
-      M_new      <- diag(scales_new)
+      K_new      <- diag(scales_new)
     } else {
-      M_new <- matrix(fit[1:9], nrow = 3L, byrow = TRUE)
+      K_new <- matrix(fit[1:9], nrow = 3L, byrow = TRUE)
       b_new <- if (estimate_bias) fit[10:12] else rep(0, 3)
     }
 
-    dP      <- max(abs(c(as.vector(M_new - M_combined), b_new - b)))
+    dP      <- max(abs(c(as.vector(K_new - K), b_new - b)))
     it_done <- it
 
     if (verbose) {
       message(sprintf("  [LS] iter %4d: dP = %.4e", it, dP))
     }
 
-    M_combined <- M_new
+    K <- K_new
     b <- b_new
     if (dP < tol) break
   }
 
   message("  [LS] converged in ", it_done, " iterations")
 
-  S <- diag(apply(M_combined, 1, function(.x) sqrt(sum(.x^2))))
-  M <- solve(S) %*% M_combined
+  S <- diag(apply(K, 1, function(.x) sqrt(sum(.x^2))))
+  M <- solve(S) %*% K
 
 
   list(
@@ -386,21 +386,20 @@ process_annotations <- function(acc, annotations, g = 1) {
 }
 
 
-#' Unified affine accelerometer calibration
+#' Calibration parameter estimation
 #'
-#' Consolidates diagonal, full-misalignment, and Xu et al. (2021)
-#' six-position tilt calibration into a single entry point.
+#' Estimates calibration parameters for triaxial accelerometer devices.
 #'
-#' @param seg_list A list as returned by \code{process_annotations()}: each
-#'   element a list with \code{$data}, \code{$mean}, optionally
-#'   \code{$glabel} and/or \code{$gvec}.
+#' @param seg_list A list as returned by `process_annotations()`: each
+#'   element a list with `$data`, `$mean`, optionally
+#'   `$glabel` and/or `$gvec`.
 #' @param g Gravitational acceleration magnitude.
-#' @param diagonal_only Logical, default \code{FALSE}. If \code{TRUE}, fit
-#'   \code{M = diag(sx,sy,sz)} only (no cross-axis/misalignment terms).
+#' @param diagonal_only Logical. If true, estimates \eqn{K = SM}, else
+#'   \eqn{S} only. See details.
 #'   Ignored if \code{estimate_tilt = TRUE}.
-#' @param estimate_bias Logical, default \code{TRUE}. Whether to fit a bias
-#'   vector. Ignored if \code{estimate_tilt = TRUE}.
-#' @param estimate_tilt Logical, default \code{FALSE}. If \code{TRUE},
+#' @param estimate_bias Logical. Whether to estimate a bias
+#'   vector. Ignored if `estimate_tilt = TRUE`.
+#' @param estimate_tilt Logical. If `TRUE`,
 #'   runs the Xu et al. (2021) six-position closed-form calibration.
 #' @param max_iter Maximum number of iterations.
 #' @param tol Convergence tolerance.
@@ -414,6 +413,40 @@ process_annotations <- function(acc, annotations, g = 1) {
 #'     \item{iters: number of iterations}
 #'     \item{deltaP: final convergence metric}
 #'   }
+#'
+#' @details
+#' The calibration model assumes that, at each static orientation (segment),
+#' the mean measured acceleration vector \eqn{m} relates to the true
+#' gravitational vector \eqn{g} following:
+#' \deqn{m = S M g + b}
+#' where \eqn{S} is a diagonal matrix of per-axis scale factors, \eqn{M}
+#' is a 3x3 matrix capturing cross-axis
+#' misalignment/coupling, and \eqn{b} is a constant bias (offset) vector.
+#' The least-squares fit used estimates \eqn{S} and \eqn{M} jointly
+#' as a single 3x3 matrix \eqn{K = SM}. K is then decomposed post-hoc by:
+#' \deqn{S = \mathrm{diag}(\|K_1\|, \|K_2\|, \|K_3\|)}
+#' \deqn{M = S^{-1} K}
+#' where \eqn{\|K_r\|} denotes the Euclidean norm of the \eqn{r}-th row of
+#' \eqn{K}. Under this decomposition
+#' \eqn{S} captures the per-axis sensitivity (gain), and
+#' \eqn{M} captures the direction each axis effectively measures along
+#' (i.e. purely the misalignment). When
+#' `diagonal_only = TRUE`, \eqn{K} is constrained to be
+#' diagonal. In this
+#' case \eqn{S = K} and \eqn{M} reduces to the identity matrix.
+#'
+#' For segments where the true orientation of \eqn{g} relative to the
+#' device is known (e.g. supplied directly via `gvec`, or inferred from
+#' `glabel`), `gvec` is treated as
+#' fixed. For segments where the orientation is unknown, `gvec` is
+#' treated as a free unit vector and is
+#' estimated jointly with the calibration parameters via iterations.
+#'
+#' When `estimate_tilt = TRUE`, instead of using a least-square fit,
+#' parameters will be estimated using the closed-form calibration
+#' of Xu et al. (2021). This calibration requires at least six segments,
+#' all segments must have `glabel`, and all six "pure" orientations
+#' must be present.
 #'
 #' @references Xu, T., Xu, X., Xu, D., Zhao, H., 2021. A Novel Calibration
 #' Method Using Six Positions for MEMS Triaxial Accelerometer. IEEE
@@ -443,9 +476,11 @@ cal_accel <- function(seg_list,
                    tol = tol, verbose = verbose))
   }
 
-  .cal_ls(seg_list, g = g,
+  .cal_ls(seg_list,
+          g = g,
           diagonal_only = diagonal_only,
           estimate_bias = estimate_bias,
-          max_iter = max_iter, tol = tol,
+          max_iter = max_iter,
+          tol = tol,
           verbose = verbose)
 }

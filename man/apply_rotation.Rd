@@ -4,10 +4,10 @@
 \alias{apply_rotation}
 \title{Rotate data}
 \usage{
-apply_rotation(m, R)
+apply_rotation(x, R)
 }
 \arguments{
-\item{m}{Input data matrix, rows are observations.}
+\item{x}{Input data matrix, rows are observations.}
 
 \item{R}{Rotation matrix such as output of \code{\link[=rotation_to_align]{rotation_to_align()}}.
 Transposed internally. See details.}
@@ -28,5 +28,6 @@ However, data matrices conventionally store observations as rows rather
 than columns. This function handles the transposition internally, so that
 \eqn{R} can be provided in its standard mathematical form and applied
 correctly to row-vector data:
-\deqn{M' = M R^T}
+\deqn{X' = X R^T}
+where \eqn{X} is the input data matrix.
 }

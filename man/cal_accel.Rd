@@ -2,7 +2,7 @@
 % Please edit documentation in R/calibration.R
 \name{cal_accel}
 \alias{cal_accel}
-\title{Unified affine accelerometer calibration}
+\title{Calibration parameter estimation}
 \usage{
 cal_accel(
   seg_list,
@@ -17,19 +17,19 @@ cal_accel(
 }
 \arguments{
 \item{seg_list}{A list as returned by \code{process_annotations()}: each
-element a list with \code{$data}, \code{$mean}, optionally
-\code{$glabel} and/or \code{$gvec}.}
+element a list with \verb{$data}, \verb{$mean}, optionally
+\verb{$glabel} and/or \verb{$gvec}.}
 
 \item{g}{Gravitational acceleration magnitude.}
 
-\item{diagonal_only}{Logical, default \code{FALSE}. If \code{TRUE}, fit
-\code{M = diag(sx,sy,sz)} only (no cross-axis/misalignment terms).
+\item{diagonal_only}{Logical. If true, estimates \eqn{K = SM}, else
+\eqn{S} only. See details.
 Ignored if \code{estimate_tilt = TRUE}.}
 
-\item{estimate_bias}{Logical, default \code{TRUE}. Whether to fit a bias
+\item{estimate_bias}{Logical. Whether to estimate a bias
 vector. Ignored if \code{estimate_tilt = TRUE}.}
 
-\item{estimate_tilt}{Logical, default \code{FALSE}. If \code{TRUE},
+\item{estimate_tilt}{Logical. If \code{TRUE},
 runs the Xu et al. (2021) six-position closed-form calibration.}
 
 \item{max_iter}{Maximum number of iterations.}
@@ -49,8 +49,41 @@ A named list with:
 }
 }
 \description{
-Consolidates diagonal, full-misalignment, and Xu et al. (2021)
-six-position tilt calibration into a single entry point.
+Estimates calibration parameters for triaxial accelerometer devices.
+}
+\details{
+The calibration model assumes that, at each static orientation (segment),
+the mean measured acceleration vector \eqn{m} relates to the true
+gravitational vector \eqn{g} following:
+\deqn{m = S M g + b}
+where \eqn{S} is a diagonal matrix of per-axis scale factors, \eqn{M}
+is a 3x3 matrix capturing cross-axis
+misalignment/coupling, and \eqn{b} is a constant bias (offset) vector.
+The least-squares fit used estimates \eqn{S} and \eqn{M} jointly
+as a single 3x3 matrix \eqn{K = SM}. K is then decomposed post-hoc by:
+\deqn{S = \mathrm{diag}(\|K_1\|, \|K_2\|, \|K_3\|)}
+\deqn{M = S^{-1} K}
+where \eqn{\|K_r\|} denotes the Euclidean norm of the \eqn{r}-th row of
+\eqn{K}. Under this decomposition
+\eqn{S} captures the per-axis sensitivity (gain), and
+\eqn{M} captures the direction each axis effectively measures along
+(i.e. purely the misalignment). When
+\code{diagonal_only = TRUE}, \eqn{K} is constrained to be
+diagonal. In this
+case \eqn{S = K} and \eqn{M} reduces to the identity matrix.
+
+For segments where the true orientation of \eqn{g} relative to the
+device is known (e.g. supplied directly via \code{gvec}, or inferred from
+\code{glabel}), \code{gvec} is treated as
+fixed. For segments where the orientation is unknown, \code{gvec} is
+treated as a free unit vector and is
+estimated jointly with the calibration parameters via iterations.
+
+When \code{estimate_tilt = TRUE}, instead of using a least-square fit,
+parameters will be estimated using the closed-form calibration
+of Xu et al. (2021). This calibration requires at least six segments,
+all segments must have \code{glabel}, and all six "pure" orientations
+must be present.
 }
 \references{
 Xu, T., Xu, X., Xu, D., Zhao, H., 2021. A Novel Calibration

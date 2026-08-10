@@ -5,19 +5,19 @@
 \title{Von Mises-Fisher kernel density estimates}
 \usage{
 vmf_kde(
-  m,
+  x,
   n_grid = 1440L,
-  kappa = 4,
+  kappa = 10,
   normalise = TRUE,
   weights = 1,
   norm_filter = 1e-10
 )
 }
 \arguments{
-\item{m}{A numeric matrix with either 2 or 3 columns and
+\item{x}{A numeric matrix with either 2 or 3 columns and
 rows as observations.}
 
-\item{n_grid}{Number of grid points. Default is 1000.}
+\item{n_grid}{Number of grid points.}
 
 \item{kappa}{Concentration parameter for the kernel distribution.
 Higher values return sharper kernels.}
@@ -27,13 +27,14 @@ normalised by multiplying it by \eqn{\frac{C_p(\mathbf{\kappa})}{n}}.
 Else, the sum is returned. See details.}
 
 \item{weights}{Observation weights. Either a single number or a
-vector, recycled to \code{nrow(m)} length.}
+vector, recycled to \code{nrow(x)} length.}
 
 \item{norm_filter}{Minimum vector length. Observations that define
-lower vector lengths (i.e. Euclidean norms) are filtered out.}
+lower vector lengths are filtered out.}
 }
 \value{
-A data frame.
+A matrix with dimensions \verb{n_grid, ncol(x)+1}, the added column
+being the density estimate at each candidate direction.
 }
 \description{
 Calculates kernel density estimates on a Fibonacci lattice grid (3D case)
@@ -49,9 +50,9 @@ where \eqn{\boldsymbol{\mu}} and \eqn{\mathbf{\kappa}} are the mean and
 concentration parameters (respectively) of the distribution, and
 \eqn{C_p(\mathbf{\kappa})} is a constant.
 The kernel density estimator over \eqn{n} observations \eqn{\mathbf{x}_i}
-at a candidate direction \eqn{\mathbf{g}} is thus:
-\deqn{\hat{f}(\mathbf{g}) = \frac{C_p(\mathbf{\kappa})}{n}
-\sum\limits_{i=1}^{n}\exp(\mathbf{\kappa}\mathbf{g}^T\mathbf{x}_i)}
+at a candidate direction \eqn{\mathbf{v}} is thus:
+\deqn{\hat{f}(\mathbf{v}) = \frac{C_p(\mathbf{\kappa})}{n}
+\sum\limits_{i=1}^{n}\exp(\mathbf{\kappa}\mathbf{v}^T\mathbf{x}_i)}
 This function picks \code{n_grid} candidate directions on a sphere using a
 Fibonacci lattice (3D case) or a regular angular grid on a circle (2D case),
 and calculates the kernel density estimate at each one of them.

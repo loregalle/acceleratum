@@ -4,19 +4,18 @@
 #' or on a regular angular grid (2D case) using a von Mises-Fisher kernel
 #' distribution.
 #'
-#' @param m A numeric matrix with either 2 or 3 columns and
+#' @param x A numeric matrix with either 2 or 3 columns and
 #'   rows as observations.
-#' @param n_grid Number of grid points. Default is 1000.
+#' @param n_grid Number of grid points.
 #' @param kappa Concentration parameter for the kernel distribution.
 #'   Higher values return sharper kernels.
-#' @param normalise Logical. If \code{TRUE} (default), the density is
+#' @param normalise Logical. If `TRUE` (default), the density is
 #'   normalised by multiplying it by \eqn{\frac{C_p(\mathbf{\kappa})}{n}}.
 #'   Else, the sum is returned. See details.
 #' @param weights Observation weights. Either a single number or a
-#'   vector, recycled to \code{nrow(m)} length.
+#'   vector, recycled to `nrow(x)` length.
 #' @param norm_filter Minimum vector length. Observations that define
-#'   lower vector lengths (i.e. Euclidean norms) are filtered out.
-#' @returns A data frame.
+#'   lower vector lengths are filtered out.
 #' @details
 #' The probability density function of the von Mises–Fisher distribution for
 #' the vector \eqn{\mathbf{x}} in \eqn{p} dimensions is:
@@ -26,43 +25,46 @@
 #' concentration parameters (respectively) of the distribution, and
 #' \eqn{C_p(\mathbf{\kappa})} is a constant.
 #' The kernel density estimator over \eqn{n} observations \eqn{\mathbf{x}_i}
-#' at a candidate direction \eqn{\mathbf{g}} is thus:
-#' \deqn{\hat{f}(\mathbf{g}) = \frac{C_p(\mathbf{\kappa})}{n}
-#' \sum\limits_{i=1}^{n}\exp(\mathbf{\kappa}\mathbf{g}^T\mathbf{x}_i)}
-#' This function picks \code{n_grid} candidate directions on a sphere using a
+#' at a candidate direction \eqn{\mathbf{v}} is thus:
+#' \deqn{\hat{f}(\mathbf{v}) = \frac{C_p(\mathbf{\kappa})}{n}
+#' \sum\limits_{i=1}^{n}\exp(\mathbf{\kappa}\mathbf{v}^T\mathbf{x}_i)}
+#' This function picks `n_grid` candidate directions on a sphere using a
 #' Fibonacci lattice (3D case) or a regular angular grid on a circle (2D case),
 #' and calculates the kernel density estimate at each one of them.
 #'
+#' @returns A matrix with dimensions `n_grid, ncol(x)+1`, the added column
+#'   being the density estimate at each candidate direction.
+#'
 #' @export
-vmf_kde <- function(m,
+vmf_kde <- function(x,
                     n_grid = 1440L,
                     kappa = 10,
                     normalise = TRUE,
                     weights = 1,
                     norm_filter = 1e-10) {
 
-  if (!inherits(m, "matrix") || !ncol(m) %in% c(2, 3)) {
-    stop("Input m must be a matrix-like object and have either 2 or 3 columns.",
+  if (!inherits(x, "matrix") || !ncol(x) %in% c(2, 3)) {
+    stop("Input x must be a matrix-like object and have either 2 or 3 columns.",
          call. = FALSE)
   }
-  if (!all(colnames(m) %in% c("x", "y", "z"))) {
-    stop("Input matrix m must have named columns x, y, and/or z.",
+  if (!all(colnames(x) %in% c("x", "y", "z"))) {
+    stop("Input matrix x must have named columns x, y, and/or z.",
          call. = FALSE)
   }
   if (!is.numeric(weights) || !is.vector(weights)) {
     stop("'weights' can only be a numeric vector")
   }
-  if (nrow(m) %% length(weights) != 0) {
-    stop("'weights' cannot be recycled to nrow(m) length.",
+  if (nrow(x) %% length(weights) != 0) {
+    stop("'weights' cannot be recycled to nrow(x) length.",
          call. = FALSE)
   }
 
-  p <- ncol(m)
-  norms <- sqrt(rowSums(m^2))
-  unit_vec <- m / norms
+  p <- ncol(x)
+  norms <- sqrt(rowSums(x^2))
+  unit_vec <- x / norms
   unit_vec <- unit_vec[norms >= norm_filter,]
   if (length(weights) > 1) {
-    weights <- rep(weights, length.out = nrow(m))
+    weights <- rep(weights, length.out = nrow(x))
     weights <- weights[norms >= norm_filter]
   }
 
@@ -95,8 +97,8 @@ vmf_kde <- function(m,
   }
 
   out <- cbind(grid, density)
-  colnames(out) <- c(colnames(m),"density")
-  as.data.frame(out)
+  colnames(out) <- c(colnames(x),"density")
+  out
 }
 
 #' Rotation matrix
@@ -104,18 +106,41 @@ vmf_kde <- function(m,
 #' Return a rotation matrix that aligns the density peak in the sample to
 #' the a specified direction.
 #'
-#' @param m matrix
-#' @param align_to placeholder
-#' @param align_secondary placeholder
+#' @param x matrix
+#' @param align_to Target direction to rotate the density peak to; either a
+#'   character string giving a signed axis (e.g. `"+x"`, `"-z"`)
+#'   or a numeric vector of length equal to the number of rotation axes.
+#' @param align_secondary Optional target direction for a secondary
+#'   alignment (same format as `align_to`), used to additionally
+#'   orient the rotation around the primary axis in the 3D case.
 #' @param secondary_policy Policy for the alignment of the secondary axis.
-#'   Ignored if \code{secondary_policy} is \code{NULL}. See details.
-#' @param fixed_ax placeholder
-#' @param n_grid passed to [vmf_kde()]. If null, defaults to 129600 for the 3D
+#'   Ignored if `align_secondary = NULL`. See details.
+#' @param fixed_ax Optional character string (`"x"`, `"y"`, `"z"`)
+#'   naming an axis to hold fixed, restricting the rotation to
+#'   the remaining two axes. Ignored for 2-column input.
+#' @param n_grid passed to [vmf_kde()]. If null, defaults to 4320 for the 3D
 #'   case and 1440 for the 2D case.
 #' @param ... other arguments passed to [vmf_kde()]
-#' @returns Rotation matrix
+#' @details
+#' The rotation is derived from the empirical directional density of
+#' `x`, estimated via [vmf_kde()] on the sphere (3D) or
+#' circle (2D). The direction of peak density is identified and a rotation
+#' matrix is constructed that maps this peak to `align_to`: via
+#' Rodrigues' rotation formula in the 3D case, or a Givens rotation in the
+#' 2D case.
+#'
+#' If `align_secondary` is supplied (3D only), a second density is
+#' estimated on the plane perpendicular to the primary peak direction,
+#' and the direction of max (or min, depending on \code{secondary_policy})
+#' density within that plane
+#' is aligned to \code{align_secondary}. This additionally constrains
+#' rotation about the primary axis, which is otherwise left unspecified
+#' when only \code{align_to} is provided.
+#'
+#' @returns A rotation matrix
+#' @seealso [vmf_kde()] [apply_rotation()]
 #' @export
-rotation_to_align <- function(m,
+rotation_to_align <- function(x,
                               align_to,
                               align_secondary = NULL,
                               secondary_policy = c("max", "min"),
@@ -123,18 +148,20 @@ rotation_to_align <- function(m,
                               n_grid = NULL,
                               ...) {
   secondary_policy <- match.arg(secondary_policy)
-  if (!inherits(m, "matrix") || !ncol(m) %in% c(2, 3)) {
-    stop("Input m must be a matrix-like object and have either 2 or 3 columns.",
+  if (!inherits(x, "matrix") || !ncol(x) %in% c(2, 3)) {
+    stop("Input x must be a matrix-like object and have either 2 or 3 columns.",
          call. = FALSE)
   }
-  if (is.null(colnames(m)) || !all(colnames(m) %in% c("x", "y", "z"))) {
-    stop("Input matrix m must have named columns x, y, and/or z.")
+  if (is.null(colnames(x)) || !all(colnames(x) %in% c("x", "y", "z"))) {
+    stop("Input matrix x must have named columns x, y, and/or z.")
   }
-  cn <- colnames(m)
+  cn <- colnames(x)
   if (!is.null(fixed_ax)) {
-    if (ncol(m) == 2) {
-      message("'fixed_ax' is ignored when m is a 2-column matrix",
+    if (ncol(x) == 2) {
+      message("'fixed_ax' is ignored when x is a 2-column matrix",
               call. = F)
+      fixed_ax <- NULL
+      rot_ax <- cn
     } else {
       if (!is.character(fixed_ax) ||
           length(fixed_ax) != 1 ||
@@ -143,7 +170,7 @@ rotation_to_align <- function(m,
         stop(
           "'fixed_ax' must be either NULL or a character string of length ",
           "one: 'x', 'y', or 'z'. The axis must be present as a column in ",
-          "'m'.",
+          "'x'.",
           call. = F
         )
       }
@@ -197,7 +224,7 @@ rotation_to_align <- function(m,
     align_to <- align_to/sqrt(sum(align_to^2))
   } else {
     stop("'align_to' must be either a numeric vector of length equal to ",
-         "the number of columns of 'm' or a character string of length 1",
+         "the number of columns of 'x' or a character string of length 1",
          call. = FALSE)
   }
 
@@ -217,7 +244,8 @@ rotation_to_align <- function(m,
       align_secondary_sy <- substr(align_secondary, 1,1)
 
       if (exists("align_to_ax") && align_to_ax == align_secondary_ax) {
-        stop("'align_to' and 'align_secondary' cannot be parallel.")
+        stop("'align_to' and 'align_secondary' cannot be parallel.",
+             call. = F)
       }
 
       align_secondary <- rep(0,n_ax)
@@ -245,10 +273,8 @@ rotation_to_align <- function(m,
       sin_theta <- sqrt(sum(proj_secondary^2))
 
       if (sin_theta < 1e-10) {
-        stop(
-          "'align_to' and 'align_secondary' are parallel.",
-          call. = F
-        )
+        stop("'align_to' and 'align_secondary' cannot be parallel.",
+             call. = F)
       }
 
       if (sin_theta < sin(pi/4)) {
@@ -261,27 +287,25 @@ rotation_to_align <- function(m,
       proj_secondary <- proj_secondary / sin_theta
     } else {
       stop("'align_secondary' must be either a numeric vector of length equal ",
-           "to the number of columns of 'm' or a character string of length 1",
+           "to the number of columns of 'x' or a character string of length 1",
            call. = FALSE)
     }
   }
 
   if (is.null(n_grid)) {
-    n_grid <- ifelse(n_ax == 3, 129600, 1440)
+    n_grid <- ifelse(n_ax == 3, 4320, 1440)
   }
 
   # find directional density. On the sphere if 3D, on the circle if 2D.
-  dens <- vmf_kde(m[,rot_ax], n_grid = n_grid, ...)
-  dens_peak <- as.matrix(
-    dens[which.max(dens$density), rot_ax]
-  )[1,]
+  dens <- vmf_kde(x[,rot_ax], n_grid = n_grid, ...)
+  dens_peak <- dens[which.max(dens[,"density"]), rot_ax, drop = FALSE][1,]
 
   if (!is.null(align_secondary)) {
     # This branch goes only in the 3D case and align_secondary defined
     # Finds the direction to align the secondary axis to.
     # first, project the density sphere grid onto the plane perpendicular
     # to the axis defined by dens_peak
-    dens_proj <- .gram_schmidt(as.matrix(dens[, rot_ax]),
+    dens_proj <- .gram_schmidt(dens[, rot_ax, drop = FALSE],
                                matrix(dens_peak, nrow(dens),
                                       3,
                                       byrow = TRUE))
@@ -309,15 +333,11 @@ rotation_to_align <- function(m,
     # based on policy, peak the maximum or minimum density
     if (secondary_policy == "max") {
       sec_selected <- unname(
-        as.matrix(
-          dens2[which.max(dens2$density),1:2]
-        )[1,]
+        dens2[which.max(dens2[,"density"]),1:2, drop = FALSE][1,]
       )
     } else {
       sec_selected <- unname(
-        as.matrix(
-          dens2[which.min(dens2$density),1:2]
-        )[1,]
+        dens2[which.min(dens2[,"density"]),1:2, drop = FALSE][1,]
       )
     }
     # from the 2D reference system to the 3D
@@ -351,7 +371,7 @@ rotation_to_align <- function(m,
 #'
 #' Rotate the data according to a rotation matrix
 #'
-#' @param m Input data matrix, rows are observations.
+#' @param x Input data matrix, rows are observations.
 #' @param R Rotation matrix such as output of [rotation_to_align()].
 #'   Transposed internally. See details.
 #' @returns Rotated matrix
@@ -364,15 +384,16 @@ rotation_to_align <- function(m,
 #'   than columns. This function handles the transposition internally, so that
 #'   \eqn{R} can be provided in its standard mathematical form and applied
 #'   correctly to row-vector data:
-#'   \deqn{M' = M R^T}
+#'   \deqn{X' = X R^T}
+#'   where \eqn{X} is the input data matrix.
 #' @export
-apply_rotation <- function(m, R) {
-  out <- m %*% t(R)
-  if (inherits(m, "aclrtm_accelerometery")) {
+apply_rotation <- function(x, R) {
+  out <- x %*% t(R)
+  if (inherits(x, "aclrtm_accelerometery")) {
     new_accelerometery(
       out,
-      sampling_rate = attr(m, "sampling_rate"),
-      start_time = attr(m, "start_time")
+      sampling_rate = attr(x, "sampling_rate"),
+      start_time = attr(x, "start_time")
     )
   } else {
     out

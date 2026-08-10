@@ -61,12 +61,12 @@ test_that("matrix method rejects matrices outside 1-3 columns", {
 
 # accelerometery.data.frame ----
 
-test_that("data.frame method derives start_time and sampling_rate from time_col", {
+test_that("data.frame method derives start_time and sampling_rate from ts_col", {
   df <- data.frame(
     x = 1:4, y = 5:8, z = 9:12,
     timestamp = as.POSIXct(seq(.5, 2, .5), tz = "UTC")
   )
-  expect_message(out <- accelerometery(df, time_col = "timestamp"),
+  expect_message(out <- accelerometery(df, ts_col = "timestamp"),
                  "estimated as 2 Hz")
   expect_equal(attr(out, "start_time"), as.POSIXct(0.5, tz = "UTC"))
   expect_equal(attr(out, "sampling_rate"), 2) # 1 / 0.5s spacing
@@ -76,13 +76,13 @@ test_that("data.frame method lets explicit sampling_rate override the estimate",
   df <- data.frame(
     x = 1:4, timestamp = as.POSIXct(seq(.5, 2, .5), tz = "UTC")
   )
-  out <- accelerometery(df, sampling_rate = 99, time_col = "timestamp")
+  out <- accelerometery(df, sampling_rate = 99, ts_col = "timestamp")
   expect_equal(attr(out, "sampling_rate"), 99)
 })
 
-test_that("data.frame method reorders unsorted rows by time_col", {
+test_that("data.frame method reorders unsorted rows by ts_col", {
   df <- data.frame(x = c(3, 1, 2), timestamp = c(3, 1, 2))
-  expect_message(out <- accelerometery(df, time_col = "timestamp",
+  expect_message(out <- accelerometery(df, ts_col = "timestamp",
                                        sampling_rate = 1), "rearranged")
   expect_equal(as.numeric(out[, "x"]), c(1, 2, 3))
 })
@@ -92,10 +92,10 @@ test_that("data.frame method errors with >3 numeric columns and no axes", {
   expect_error(accelerometery(df), "at most 3")
 })
 
-test_that("data.frame method errors when time_col is invalid", {
+test_that("data.frame method errors when ts_col is invalid", {
   df <- data.frame(x = 1:4, timestamp = 1:4)
-  expect_error(accelerometery(df, time_col = "nope"), "not found")
-  expect_error(accelerometery(df, time_col = 5), "out of range")
+  expect_error(accelerometery(df, ts_col = "nope"), "not found")
+  expect_error(accelerometery(df, ts_col = 5), "out of range")
 })
 
 # Validation ----

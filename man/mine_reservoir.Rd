@@ -5,10 +5,10 @@
 \title{Mine stationary accelerometer windows via reservoir sampling}
 \usage{
 mine_reservoir(
-  path,
-  data_col,
-  ts_col,
-  axes,
+  object,
+  data_col = NULL,
+  ts_col = NULL,
+  axes = NULL,
   window_sec = 5,
   sr = NULL,
   sr_tol = 0.5,
@@ -18,7 +18,7 @@ mine_reservoir(
   min_samples_per_window = 3,
   reservoir_size = 80000,
   slot_size = NULL,
-  scratch_path = "tmp",
+  scratch_path = "./tmp",
   rng_seed = 42,
   chunk_size = 10000,
   delim = ",",
@@ -27,13 +27,13 @@ mine_reservoir(
 )
 }
 \arguments{
-\item{path}{Path to the burst-format CSV file.}
+\item{object}{burst object or path to a burst-format CSV file.}
 
 \item{data_col}{Name of the column holding burst data cells.}
 
 \item{ts_col}{Name of the column holding per-row timestamps.}
 
-\item{axes}{Axis specification, parsed via \code{.parse_axes()}.}
+\item{axes}{Axis specification.}
 
 \item{window_sec}{Sliding window length in seconds.}
 
@@ -54,9 +54,9 @@ is evaluated.}
 \item{slot_size}{Fixed sample capacity per scratch-file record; estimated
 from \code{window_sec} and \code{sr} if \code{NULL}.}
 
-\item{scratch_path}{Path for the scratch binary file (must not exist).}
+\item{scratch_path}{Path for the scratch binary file.}
 
-\item{rng_seed}{RNG seed for reservoir sampling.}
+\item{rng_seed}{rng seed for repeatability purposes.}
 
 \item{chunk_size}{Rows read per chunk.}
 

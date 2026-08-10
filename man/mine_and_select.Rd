@@ -5,7 +5,7 @@
 \title{Mine, select, and reconstruct diverse stationary windows}
 \usage{
 mine_and_select(
-  path,
+  object,
   data_col,
   ts_col,
   axes,
@@ -18,7 +18,7 @@ mine_and_select(
 )
 }
 \arguments{
-\item{path, data_col, ts_col, axes, window_sec, ...}{Passed to
+\item{object, data_col, ts_col, axes, window_sec, ...}{Passed to
 \code{\link[=mine_reservoir]{mine_reservoir()}}.}
 
 \item{k}{Number of orientations to select.}

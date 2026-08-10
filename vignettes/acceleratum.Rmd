@@ -48,7 +48,7 @@ consider three sources of errors that are structural to the device:
 (e.g., +1g on the x-axis might read as 0.98, while +1g on y reads as 1.02).
 Calibration equalizes these sensitivities.
 *   Misalignment (M): The sensor's internal axes may not be perfectly orthogonal
-(90° apart). This causes cross-talk where acceleration along one axis leaks
+(90° apart). This causes acceleration along one axis to leak
 into another.
 *   Bias (b): Each axis can have a constant offset (e.g., reading 0.1g even
 at rest), which must be subtracted to center measurements at zero.
@@ -63,7 +63,7 @@ methods to attempt the estimation of calibration parameters from
 deployed devices.
 
 ```{r setup}
-library(acceleratum)
+library("acceleratum")
 ```
 
 # Data format and handling
@@ -106,7 +106,7 @@ head(acc)
 ```
 
 ```{r}
-# Plotting method fo aclrtm_accelerometery objects
+# Plotting method for aclrtm_accelerometery objects
 plot(acc)
 ```
 
@@ -234,7 +234,7 @@ rm(list = ls())
 gc()
 ```
 
-# Calibration parameter estimation
+# Calibration
 
 To showcase how to perform calibration parameter estimation from bench acquired
 data we will use the `bench` dataset.
@@ -253,6 +253,7 @@ acc <- b2a(burst(bench, "accelerations_raw", "xyz", "timestamp"))
 plot(acc)
 ```
 
+## Known position filtering with `segment_select()`
 The easiest way to perform the calibration is to manually select segments in the
 data for which the direction of the gravity vector is known. That can be
 done interactively with `segment_select()`, which will open a shiny app
@@ -287,6 +288,7 @@ the calibration function.
 seg_list <- process_annotations(acc, bench_annotations)
 ```
 
+## Parameter estimation
 `cal_accel()` is the main function to estimate calibration parameters given
 a list of segments (such as the output of `process_annotations()`).
 ```{r}
@@ -310,6 +312,7 @@ cal_param <- cal_accel(seg_list, estimate_tilt = TRUE)
 cal_param
 ```
 
+## Apply calibration
 The raw data can then be calibrated by:
 
 ```{r}
@@ -362,4 +365,141 @@ gc()
 ```
 
 
-# Rotate to align to gravity
+# Standardise rotation
+In `acceleratum` we provide functions to standardise the rotation
+of devices across multiple deployments. The approach rests on the assumption
+that subjects across deployments behave similarly enough that the direction
+of the peak density vector consistently represents the same direction
+relative to the subjects' reference frame. For most cases, that should
+correspond to the direction of gravity during the subjects' most common
+posture.  
+
+Under this assumption, observed differences in the direction
+of the peak density vector are a consequence of differences in positioning of
+the device. Aligning each deployment's peak density vector to a common
+reference vector removes this source of variation.  
+
+However, aligning a single axis still allows for infinite rotational 
+configurations. To fully fix the orientation, a secondary axis can optionally
+be specified. The secondary alignment targets the direction of maximum
+(or minimum) density in the plane perpendicular to the primary axis,
+constraining the remaining rotational degree of freedom.
+
+Constraining the rotation to the perpendicular plane is also useful when one
+axis can be assumed fixed (e.g. a device rigidly mounted on a collar), in which
+case the rotational degrees of freedom reduce to a single angle. Alignment can
+then be performed exclusively by rotating the plane perpendicular to
+the fixed axis, making the secondary alignment step unnecessary.  
+
+Note: all rotation-related operations should be carried after calibration.
+
+## Rotate 2 axes: the collar case  
+The following example will be using the `muskox` data. The `muskox` data was
+collected with a triaxial accelerometer placed on a collar. The collar used
+also carries a battery that acts as counterweight and is, when the animal is
+in a neutral standing position, placed in the lower part of the collar, towards
+the ground. The accelerometer is instead placed approximatively opposite of
+the battery, but due to interindividual differences in how tight the collar
+is deployed, the position of the accelerometer can rotate slightly compared
+to an ideal placement.
+
+Because the accelerometer is built on the collar with the x axis facing
+the same direction of the animal, we assume variations along the x axis
+due to slight changes in the tightness of the collar to be negligible. Instead,
+we want to correct for the possible changes in the y- and z- axes.
+
+```{r}
+data(muskox, package = "acceleratum")
+
+acc <- muskox |> 
+  burst("accelerations_raw", "xyz", "timestamp") |> 
+  b2a()
+
+# downsampling to 0.5 Hz
+acc_ds <- downsample(acc, to_sr = 0.5)
+```
+
+
+In the ideal placement, the z-axis is aligned with the gravity vector,
+but with inverted directionality (i.e. negative values should point towards
+the ground). As such, we expect the vector of peak density to be approximatively
+$\overrightarrow{v} = \left(0, -1\right)$ in the yz-plane.
+
+We can explore the directional density using `vmf_kde()`
+
+```{r}
+kde <- vmf_kde(acc_ds[,c("y", "z")])
+```
+
+```{r}
+# load ggplot2 package for visualisation
+library("ggplot2")
+```
+
+
+```{r}
+as.data.frame(kde) |> 
+  ggplot(aes(y, z, colour = density)) +
+  geom_point() +
+  scale_colour_viridis_c() +
+  coord_fixed() +
+  theme_bw()
+```
+
+We notice that the density peak is off-centered compared to the expected. We
+then use the `rotation_to_align()` function to find the rotation that to apply
+to the input data.
+
+```{r}
+R <- rotation_to_align(acc_ds,
+                       align_to = "-z",
+                       fixed_ax = "x")
+
+R
+```
+
+The rotation can then be applied:
+
+```{r}
+acc_ds_rot <- acc_ds |> 
+  apply_rotation(R)
+```
+
+And we can compare the result by plotting:
+```{r}
+acc_ds_rot[,c("y", "z")] |> 
+  vmf_kde() |> 
+  as.data.frame() |> 
+  ggplot(aes(y, z, colour = density)) +
+  geom_point() +
+  scale_colour_viridis_c() +
+  coord_fixed() +
+  theme_bw()
+```
+
+## Rotation in 3 dimensions
+
+The steps are similar for a rotation in 3 dimension. Without specifying
+a secondary axis to fix the rotational configuration, a single step rotation,
+consisting of a Rodrigues rotation, is used.
+
+```{r}
+R <- rotation_to_align(acc_ds,
+                       align_to = "-z")
+
+R
+```
+
+The rotational configuration can be fixed. The algorithm finds the rotation
+in two steps, applying first a Rodrigues rotation as above, then finding the
+rotation in the 2-dimensional plane perpendicular to the axis just aligned.
+
+```{r}
+R <- rotation_to_align(acc_ds,
+                       align_to = "-z",
+                       align_secondary = "+x",
+                       secondary_policy = "max")
+
+R
+```
+

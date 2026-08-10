@@ -10,10 +10,10 @@ print.aclrtm_accelerometery <- function(x, ...) {
   ))
 
   if (!is.null(sr)) {
-    cat(sprintf("  |  sampling_rate: %.4g Hz", sr))
+    cat(sprintf("\n  sampling_rate : %.4g Hz", sr))
   }
   if (!is.null(st)) {
-    cat(sprintf("  |  start_time: %s", format(st)))
+    cat(sprintf("\n  start_time : %s", format(st)))
   }
   cat("\n")
 
@@ -24,23 +24,6 @@ print.aclrtm_accelerometery <- function(x, ...) {
   attr(m, "start_time")    <- NULL
   print(m, ...)
   invisible(x)
-}
-
-
-#' @export
-summary.aclrtm_accelerometery <- function(object, ...) {
-  sr <- attr(object, "sampling_rate")
-  st <- attr(object, "start_time")
-  axes <- paste(colnames(object), collapse = ", ")
-
-  cat("aclrtm_accelerometery object\n")
-  cat("  Samples      :", nrow(object), "\n")
-  cat("  Axes         :", axes, "\n")
-  if (!is.null(sr)) cat(sprintf("  Sampling rate: %.4g Hz\n", sr))
-  if (!is.null(st)) cat("  Start time   :", format(st), "\n")
-  cat("\nColumn summaries:\n")
-  print(apply(object, 2L, summary))
-  invisible(object)
 }
 
 #' @export
