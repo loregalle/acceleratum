@@ -262,16 +262,16 @@ locally
 bench_annotations <- segment_select(acc)
 ```
 
-![](./help_images/seg_select_01.png){width=4in}  
+![](./help_images/seg_select_01.png){width=6in}  
 
 The user can click and drag to select (horizontal) segments of interest
 and label them  
 
-![](./help_images/seg_select_02.png){width=4in}  
+![](./help_images/seg_select_02.png){width=6in}  
 
 Then repeat for all other segments.  
 
-![](./help_images/seg_select_03.png){width=4in}  
+![](./help_images/seg_select_03.png){width=6in}  
 
 Click "Done" to close the app and output the result. For ease of use,
 we included a small dataset of annotations taken with `segment_select()` on
@@ -359,11 +359,89 @@ brst_ox_calib_flipped <- apply_cal(brst_ox,
 plot(brst_ox_calib_flipped)
 ```
 
+
+
+
+## Unknown position filtering
+`acceleratum` has a routine to attempt to calibrate devices that were deployed
+and for which bench calibration is not possible.  
+
+Note: be aware that these functions are still experimental and are quite slow.
+
+This routine currently works exclusively with data in `burst` format and
+allows for the processing of large data files in chunks, as long as
+these are saved in burst-like format (e.g. using `write_burst()`).  
+
+The pipeline includes three steps in three functions:  
+
+*  `mine_reservoir()`: reservoir sampling of windows of data which show
+little movement activity (as controlled by arguments
+`vedba_thresh`, `var_thresh`, `mag_thresh`). The function stores the data
+of each sampled window in a scratch binary file. The mean vectors of the windows
+are returned.  
+*  `select_fps()`: performs furthest point sampling of `k` windows using their
+means (output of `mine_reservoir()`) and return their indexes.  
+*  `reconstruct_selected()`: from the reservoir information stored in
+the output of `mine_reservoir()` and the indexes of the selected window,
+recreates a list of data windows to be input into `cal_accel()`.  
+
+For simplicity, a wrapper for the three steps is provided: `mine_and_select()`.
+
+```{r}
+# can run the same example with data(muskox), but it would be noticeably
+# slower. For the purpose of the example, we are sticking to the
+# bench data.
+
+data(bench)
+bench <- burst(bench, "accelerations_raw",
+               # a current limitation to our functions is that
+               # a timestamp column must be defined
+               ts_col = "timestamp")
+```
+
+```{r}
+# scratch file name defaults to "./tmp"
+reservoir <- mine_reservoir(
+  bench,           # can be a path to a .csv file with data in burst format
+  overwrite = TRUE # should the scratch file be overwritten?
+)
+```
+
+```{r}
+selected_points <- select_fps(reservoir, k = 6)
+```
+
+```{r}
+seg_list_unknown <- reconstruct_selected(reservoir,
+                                         selected_points$selected_idx,
+                                         delete_scratch = TRUE)
+```
+
+Note that, due to further point sampling approach and the
+unknown direction of the real gravity vector, the misalignment matrix
+cannot be reliably estimated.
+```{r}
+cal_param_unknown <- cal_accel(seg_list_unknown,
+                               diagonal_only = TRUE,
+                               verbose = FALSE)
+```
+
+```{r}
+cal_param_unknown
+```
+
+```{r}
+bench_cal_unknown <- apply_cal(bench,
+                               S = cal_param_unknown$S,
+                               M = cal_param_unknown$M,
+                               b = cal_param_unknown$bias)
+```
+
+
 ```{r, include = FALSE}
 rm(list = ls()[!ls() %in% c("cal_param")])
 gc()
 ```
-
 
 # Standardise rotation
 In `acceleratum` we provide functions to standardise the rotation
@@ -423,7 +501,10 @@ acc_ds <- downsample(acc, to_sr = 0.5)
 In the ideal placement, the z-axis is aligned with the gravity vector,
 but with inverted directionality (i.e. negative values should point towards
 the ground). As such, we expect the vector of peak density to be approximatively
-$\overrightarrow{v} = \left(0, -1\right)$ in the yz-plane.
+
+$$\overrightarrow{v} = \left(0, -1\right)$$
+
+in the yz-plane.
 
 We can explore the directional density using `vmf_kde()`
 
@@ -447,8 +528,8 @@ as.data.frame(kde) |>
 ```
 
 We notice that the density peak is off-centered compared to the expected. We
-then use the `rotation_to_align()` function to find the rotation that to apply
-to the input data.
+then use the `rotation_to_align()` function to find the rotation to apply
+to the input data to have it aligned with the expected values.
 
 ```{r}
 R <- rotation_to_align(acc_ds,

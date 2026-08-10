@@ -26,6 +26,7 @@
 #' @param slot_size Fixed sample capacity per scratch-file record; estimated
 #'   from \code{window_sec} and \code{sr} if \code{NULL}.
 #' @param scratch_path Path for the scratch binary file.
+#' @param overwrite if TRUE, the scratch file is overwritten when present.
 #' @param rng_seed rng seed for repeatability purposes.
 #' @param chunk_size Rows read per chunk.
 #' @param delim CSV delimiter.
@@ -50,6 +51,7 @@ mine_reservoir <- function(object,
                            reservoir_size = 80000,
                            slot_size = NULL,
                            scratch_path = "./tmp",
+                           overwrite = FALSE,
                            rng_seed = 42,
                            chunk_size = 10000,
                            delim = ",",
@@ -57,13 +59,17 @@ mine_reservoir <- function(object,
                            tz = "UTC") {
 
   if (file.exists(scratch_path)) {
-    stop(sprintf(
-      paste(
-        "A file named '%s' already exists in the working directory.",
-        "Remove it or choose a different `scratch_path` before proceeding."
-      ),
-      scratch_path
-    ), call. = FALSE)
+    if (overwrite) {
+      file.remove(scratch_path)
+    } else {
+      stop(sprintf(
+        paste(
+          "A file named '%s' already exists in the working directory.",
+          "Remove it or choose a different `scratch_path` before proceeding."
+        ),
+        scratch_path
+      ), call. = FALSE)
+    }
   }
 
   if (!is(object) == "aclrtm_burst" &&
@@ -458,9 +464,5 @@ mine_and_select <- function(object, data_col, ts_col, axes, window_sec, k,
   windows <- reconstruct_selected(reservoir, fps$selected_idx,
                                   delete_scratch = delete_scratch)
 
-  list(
-    orientations = fps$orientations,
-    means_raw    = reservoir$means[fps$selected_idx, , drop = FALSE],
-    windows      = windows
-  )
+  windows
 }
