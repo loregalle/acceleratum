@@ -10,3 +10,4 @@
 ^doc$
 ^Meta$
 ^vignettes/help_images$
+^rendered_vignette$
