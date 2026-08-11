@@ -2,8 +2,7 @@
 
 An R package to aid in bench calibration of triaxial accelerometery devices.  
 
-Install with `pak::pkg_install("loregalle/acceleratum")` (or
-`pak::pkg_install("loregalle/acceleratum@dev")` for the development version)  
+Install with `pak::pkg_install("loregalle/acceleratum")`  
 
 Get started with `vignette("acceleratum", package = "acceleratum")`  
 
