@@ -1,6 +1,6 @@
 # the original dataset is not included as it is over 10 GB in size and
 # is more than 1 year of data. For more information, contact
-# Dr. Floris van Beest.
+# Prof. Niels Martin Schmidt.
 # original data file name: 26147-34-2019-acc.csv
 muskox <- read.csv("data-raw/26147-34-2019-acc_4daysubset.csv")
 

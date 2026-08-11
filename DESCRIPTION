@@ -3,14 +3,16 @@ Type: Package
 Title: Calibrate (Triaxial) Accelerometer Devices
 Version: 0.1.0
 Authors@R: c(
-    person(
-      "Lorenzo", "Galletta",
-      email = c("l.galletta@ecos.au.dk", "l.galletta@tuta.com"),
-      role = c("aut", "cre"),
-      comment = c(ORCID = "0000-0001-6917-3995")
-    )
+    person("Lorenzo", "Galletta", , c("l.galletta@ecos.au.dk", "l.galletta@tuta.com"), role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-6917-3995")),
+    person("Floris", "van Beest", , "flbe@ecos.au.dk", role = "aut",
+           comment = c(ORCID = "0000-0002-5701-4927")),
+    person("Niels Martin", "Schmidt", , "nms@ecos.au.dk", role = "aut",
+           comment = c(ORCID = "0000-0002-4166-6218")),
+    person("Lars Holst", "Hansen", , "lahh@ecos.au.dk", role = "aut",
+           comment = c(ORCID = "0000-0003-2956-7388"))
   )
-Description: Support the for bench calibration of (triaxial)
+Description: Support for bench calibration of (triaxial)
     accelerometer devices and methods for
     the calibration of field-deployed devices.
 License: GPL (>= 3)
