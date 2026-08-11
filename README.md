@@ -4,7 +4,7 @@ An R package to aid in bench calibration of triaxial accelerometery devices.
 
 Install with
 ```
-remotes::install_github("mygithub/mypackage",
+remotes::install_github("loregalle/acceleratum",
                         build_vignettes = TRUE,
                         force = TRUE)
 ```
