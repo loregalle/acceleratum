@@ -72,14 +72,14 @@ mine_reservoir <- function(object,
     }
   }
 
-  if (!is(object) == "aclrtm_burst" &&
+  if (!inherits(object, "aclrtm_burst") &&
       !(is.character(object) && length(object) == 1)) {
     stop("`object` must be either an `aclrtm_burst` class object ",
          "or a valid path to a file containing burst-like formatted data.")
   }
 
   # if burst object, extract attributes
-  if (is(object) == "aclrtm_burst") {
+  if (inherits(object, "aclrtm_burst")) {
     if (is.null(data_col)) {
       data_col <- attr(object, "data_col")
     }
@@ -89,7 +89,7 @@ mine_reservoir <- function(object,
     }
 
     if (is.null(axes)) {
-      axes <- attr(bench, "axes")
+      axes <- attr(object, "axes")
     }
   }
 
@@ -175,7 +175,7 @@ mine_reservoir <- function(object,
     if (n_rows == 0L) return(invisible(NULL))
 
     # burst data to matrix
-    if (is(object) == "aclrtm_burst") {
+    if (inherits(object, "aclrtm_burst")) {
       mats <- chunk[[data_col]]
     } else {
       dat_chr <- chunk[[data_col]]
@@ -247,7 +247,7 @@ mine_reservoir <- function(object,
     invisible(NULL)
   }
 
-  if (is(object) == "aclrtm_burst") {
+  if (inherits(object, "aclrtm_burst")) {
     process_chunk(object)
   } else if (is.character(object) && length(object == 1)) {
 

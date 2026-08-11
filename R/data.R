@@ -50,13 +50,9 @@
 #' collar and deployed on a muskox in Zackenberg Research Station, Greenland.
 #' Sampling rate is fixed at 8 Hz.
 #'
-#' @format A data frame with 69103 rows and 6 columns:
+#' @format A data frame with 51830 rows and 2 columns:
 #' \describe{
-#'   \item{tag_local_identifier}{ID of the tag used}
-#'   \item{individual_local_identifier}{ID of the animal}
 #'   \item{timestamp}{A \code{POSIXct} column of time stamps}
-#'   \item{acceleration_axes}{A specification for the axes collected}
-#'   \item{acceleration_sampling_frequency_per_axis}{Sampling frequency}
 #'   \item{accelerations_raw}{Character vector of raw acceleration data in burst
 #'     format (see details).}
 #' }

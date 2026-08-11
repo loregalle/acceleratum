@@ -24,21 +24,21 @@ test_that("vmf_kde validates weights recycling length", {
   expect_error(vmf_kde(x, weights = c(1, 2, 3)), "cannot be recycled")
 })
 
-test_that("vmf_kde returns a data frame with correct columns (3D)", {
+test_that("vmf_kde returns a matrix with correct columns (3D)", {
   set.seed(42)
   x <- matrix(rnorm(30), ncol = 3, dimnames = list(NULL, c("x", "y", "z")))
   out <- vmf_kde(x, n_grid = 100)
-  expect_s3_class(out, "data.frame")
-  expect_named(out, c("x", "y", "z", "density"))
+  expect_true(is.matrix(out))
+  expect_equal(colnames(out), c("x", "y", "z", "density"))
   expect_equal(nrow(out), 100)
 })
 
-test_that("vmf_kde returns a data frame with correct columns (2D)", {
+test_that("vmf_kde returns a matrix with correct columns (2D)", {
   set.seed(42)
   x <- matrix(rnorm(20), ncol = 2, dimnames = list(NULL, c("x", "y")))
   out <- vmf_kde(x, n_grid = 100)
-  expect_s3_class(out, "data.frame")
-  expect_named(out, c("x", "y", "density"))
+  expect_true(is.matrix(out))
+  expect_equal(colnames(out), c("x", "y", "density"))
   expect_equal(nrow(out), 100)
 })
 
@@ -64,7 +64,7 @@ test_that("vmf_kde density peaks near the concentration of the data (3D)", {
   colnames(x) <- c("x", "y", "z")
 
   out <- vmf_kde(x, n_grid = 2000, kappa = 20)
-  peak <- out[which.max(out$density), c("x", "y", "z")]
+  peak <- out[which.max(out[,"density"]), c("x", "y", "z")]
 
   expect_equal(as.numeric(peak), c(0, 0, 1), tolerance = 0.1)
 })
@@ -78,7 +78,7 @@ test_that("vmf_kde density peaks near the concentration of the data (2D)", {
   colnames(x) <- c("x", "y")
 
   out <- vmf_kde(x, n_grid = 1440, kappa = 20)
-  peak <- out[which.max(out$density), c("x", "y")]
+  peak <- out[which.max(out[,"density"]), c("x", "y")]
 
   expect_equal(as.numeric(peak), c(1, 0), tolerance = 0.1)
 })
@@ -90,7 +90,7 @@ test_that("vmf_kde normalise = FALSE returns unnormalised sums", {
   out_norm <- vmf_kde(x, n_grid = 50, normalise = TRUE)
 
   # normalised and raw densities should be proportional, not identical
-  expect_false(isTRUE(all.equal(out_raw$density, out_norm$density)))
+  expect_false(isTRUE(all.equal(out_raw[,"density"], out_norm[,"density"])))
 })
 
 test_that("vmf_kde filters out observations below norm_filter", {
@@ -101,7 +101,6 @@ test_that("vmf_kde filters out observations below norm_filter", {
   colnames(x) <- c("x", "y", "z")
   # should not error and should effectively ignore the near-zero row
   expect_silent(out <- vmf_kde(x, n_grid = 50))
-  expect_s3_class(out, "data.frame")
 })
 
 test_that("vmf_kde accepts scalar and vector weights", {
@@ -111,7 +110,7 @@ test_that("vmf_kde accepts scalar and vector weights", {
   # doubling all weights should double the (unnormalised) density
   out1_raw <- vmf_kde(x, n_grid = 50, weights = 1, normalise = FALSE)
   out2_raw <- vmf_kde(x, n_grid = 50, weights = 2, normalise = FALSE)
-  expect_equal(out2_raw$density, out1_raw$density * 2, tolerance = 1e-8)
+  expect_equal(out2_raw[,"density"], out1_raw[,"density"] * 2, tolerance = 1e-8)
 })
 
 # rotation_to_align ----

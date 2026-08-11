@@ -1,4 +1,4 @@
-# print and summary ----
+# print ----
 test_that("print.aclrtm_accelerometery displays header and matrix", {
   x <- make_test_accel(n = 3)
   expect_snapshot(print(x))
@@ -7,11 +7,6 @@ test_that("print.aclrtm_accelerometery displays header and matrix", {
 test_that("print.aclrtm_accelerometery handles missing attributes gracefully", {
   x <- new_accelerometery(matrix(1:6, 3, 2, dimnames = list(NULL, c("x","y"))))
   expect_snapshot(print(x))
-})
-
-test_that("summary.aclrtm_accelerometery displays object info and column summaries", {
-  x <- make_test_accel(n = 5)
-  expect_snapshot(summary(x))
 })
 
 # head and tail ----

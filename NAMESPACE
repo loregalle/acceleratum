@@ -37,6 +37,7 @@ export(validate_accelerometery)
 export(validate_burst)
 export(vmf_kde)
 export(write_burst)
+importFrom(stats,median)
 importFrom(utils,
   head,
   tail

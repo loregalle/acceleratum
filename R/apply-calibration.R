@@ -205,7 +205,7 @@ apply_cal.aclrtm_burst <- function(A_sens,
                                    R = diag(nchar(attr(A_sens, "axes"))),
                                    b = rep(0, nchar(attr(A_sens, "axes")))) {
   # Checks for A_sens
-  if (!is(A_sens, "aclrtm_burst")) {
+  if (!inherits(A_sens, "aclrtm_burst")) {
     stop("`A_sens` must be an `aclrtm_burst` object", call. = FALSE)
   }
   axes <- .parse_axes(attr(A_sens, "axes"))
