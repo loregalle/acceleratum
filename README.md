@@ -18,7 +18,7 @@ tinytex::install_tinytex()
 ```
 
 Or you can avoid building the vignette and download the pdf from the
-`inst` folder.
+`rendered_vignettes` folder.
 
 Currently in early development stages, be aware of bugs and possible
 future changes.
