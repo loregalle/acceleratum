@@ -19,6 +19,7 @@ mine_reservoir(
   reservoir_size = 80000,
   slot_size = NULL,
   scratch_path = "./tmp",
+  overwrite = FALSE,
   rng_seed = 42,
   chunk_size = 10000,
   delim = ",",
@@ -55,6 +56,8 @@ is evaluated.}
 from \code{window_sec} and \code{sr} if \code{NULL}.}
 
 \item{scratch_path}{Path for the scratch binary file.}
+
+\item{overwrite}{if TRUE, the scratch file is overwritten when present.}
 
 \item{rng_seed}{rng seed for repeatability purposes.}
 

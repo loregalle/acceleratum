@@ -7,8 +7,11 @@
 \format{
 A data frame with 29 rows and 3 columns:
 \describe{
+\item{tag_local_identifier}{ID of the tag used}
+\item{individual_local_identifier}{fixed value to "cal" for "calibration"}
 \item{timestamp}{A \code{POSIXct} column of time stamps}
 \item{acceleration_axes}{A specification for the axes collected}
+\item{acceleration_sampling_frequency_per_axis}{Sampling frequency}
 \item{accelerations_raw}{Character vector of raw acceleration data in burst
 format (see details).}
 }

@@ -6,7 +6,9 @@
 \alias{acceleratum-package}
 \title{acceleratum: Calibrate (Triaxial) Accelerometer Devices}
 \description{
-Support the for bench calibration of (triaxial) accelerometer devices and methods for the calibration of field-deployed devices.
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
+Support for bench calibration of (triaxial) accelerometer devices and methods for the calibration of field-deployed devices.
 }
 \author{
 \strong{Maintainer}: Lorenzo Galletta \email{l.galletta@ecos.au.dk} \email{l.galletta@tuta.com} (\href{https://orcid.org/0000-0001-6917-3995}{ORCID})
@@ -14,6 +16,9 @@ Support the for bench calibration of (triaxial) accelerometer devices and method
 Authors:
 \itemize{
   \item Lorenzo Galletta \email{l.galletta@ecos.au.dk} \email{l.galletta@tuta.com} (\href{https://orcid.org/0000-0001-6917-3995}{ORCID})
+  \item Floris van Beest \email{flbe@ecos.au.dk} (\href{https://orcid.org/0000-0002-5701-4927}{ORCID})
+  \item Niels Martin Schmidt \email{nms@ecos.au.dk} (\href{https://orcid.org/0000-0002-4166-6218}{ORCID})
+  \item Lars Holst Hansen \email{lahh@ecos.au.dk} (\href{https://orcid.org/0000-0003-2956-7388}{ORCID})
 }
 
 }
