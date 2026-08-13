@@ -584,3 +584,8 @@ R <- rotation_to_align(acc_ds,
 R
 ```
 
+# References
+Xu, T., Xu, X., Xu, D., Zhao, H., 2021. A Novel Calibration
+Method Using Six Positions for MEMS Triaxial Accelerometer. IEEE
+Transactions on Instrumentation and Measurement 70, 1-11.
+https://doi.org/10.1109/TIM.2020.3026024
