@@ -1,7 +1,7 @@
 Package: acceleratum
 Type: Package
 Title: Calibrate (Triaxial) Accelerometer Devices
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Lorenzo", "Galletta", , c("l.galletta@ecos.au.dk", "l.galletta@tuta.com"), role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-6917-3995")),
