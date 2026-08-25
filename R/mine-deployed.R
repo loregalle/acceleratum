@@ -23,6 +23,8 @@
 #' @param min_samples_per_window Minimum samples required before a window
 #'   is evaluated.
 #' @param reservoir_size Maximum number of windows retained.
+#' @param write_to_file If TRUE, writes the reservoir to an external
+#' scratch file.
 #' @param slot_size Fixed sample capacity per scratch-file record; estimated
 #'   from \code{window_sec} and \code{sr} if \code{NULL}.
 #' @param scratch_path Path for the scratch binary file.
@@ -48,7 +50,8 @@ mine_reservoir <- function(object,
                            var_thresh = 2e-4,
                            mag_thresh = 0.8,
                            min_samples_per_window = 3,
-                           reservoir_size = 80000,
+                           reservoir_size = 4000,
+                           write_to_file = FALSE,
                            slot_size = NULL,
                            scratch_path = "./tmp",
                            overwrite = FALSE,
@@ -58,17 +61,23 @@ mine_reservoir <- function(object,
                            sep = " ",
                            tz = "UTC") {
 
-  if (file.exists(scratch_path)) {
-    if (overwrite) {
-      file.remove(scratch_path)
-    } else {
-      stop(sprintf(
-        paste(
-          "A file named '%s' already exists in the working directory.",
-          "Remove it or choose a different `scratch_path` before proceeding."
-        ),
-        scratch_path
-      ), call. = FALSE)
+  if(!is.logical(write_to_file) && length(write_to_file) != 1) {
+    stop("`write_to_file` must be a logical vector of length 1.")
+  }
+
+  if (write_to_file) {
+    if (file.exists(scratch_path)) {
+      if (overwrite) {
+        file.remove(scratch_path)
+      } else {
+        stop(sprintf(
+          paste(
+            "A file named '%s' already exists in the working directory.",
+            "Remove it or choose a different `scratch_path` before proceeding."
+          ),
+          scratch_path
+        ), call. = FALSE)
+      }
     }
   }
 
@@ -127,6 +136,7 @@ mine_reservoir <- function(object,
   state$reservoir_filled <- 0L
   state$passing_seen     <- 0L
   state$windows_total    <- 0L
+  state$write_to_file    <- write_to_file
 
   init_cap <- max(64L, min_samples_per_window * 4L)
   state$buf_cap   <- init_cap
@@ -141,27 +151,32 @@ mine_reservoir <- function(object,
   state$scratch_open      <- FALSE
   state$record_size_bytes <- NULL
   state$scratch_path      <- scratch_path
+  state$reservoir_raw     <- NULL   # only used when write_to_file = FALSE
   state$n_axes            <- n_axes
   state$bootstrap_needed  <- is.null(sr) # should nominal_sr be estimated
 
   finalize_setup <- function() {
-    if (is.null(state$slot_size)) {
-      state$slot_size <- as.integer(
-        floor(
-          state$window_sec * (state$nominal_sr + state$sr_tol)
-        ) + 1
-      )
+    if (state$write_to_file) {
+      if (is.null(state$slot_size)) {
+        state$slot_size <- as.integer(
+          floor(
+            state$window_sec * (state$nominal_sr + state$sr_tol)
+          ) + 1
+        )
+      }
+      state$record_size_bytes <- .record_size_bytes(state$slot_size, n_axes)
+      state$scratch_con  <- file(state$scratch_path, open = "wb")
+      state$scratch_open <- TRUE
+    } else {
+      state$reservoir_raw <- vector("list", state$reservoir_size)
     }
-    state$record_size_bytes <- .record_size_bytes(state$slot_size, n_axes)
-    state$scratch_con  <- file(state$scratch_path, open = "wb")
-    state$scratch_open <- TRUE
   }
 
   # Ensure the scratch connection (if opened) is always closed, even on error.
   # Tracked via an explicit flag rather than isOpen(), since re-querying an
   # already-closed connection object can itself error ("invalid connection").
   on.exit({
-    if (isTRUE(state$scratch_open)) {
+    if (state$scratch_open) {
       close(state$scratch_con)
       state$scratch_open <- FALSE
     }
@@ -279,7 +294,9 @@ mine_reservoir <- function(object,
   }
 
   if (state$reservoir_filled == 0L) {
-    if (file.exists(state$scratch_path)) file.remove(state$scratch_path)
+    if (state$write_to_file &&  file.exists(state$scratch_path)) {
+      file.remove(state$scratch_path)
+    }
     stop("No stationary windows found with the current thresholds. ",
          "Adjust thresholds and retry.",
          call. = FALSE)
@@ -288,18 +305,26 @@ mine_reservoir <- function(object,
   means_out <- state$reservoir_means[seq_len(state$reservoir_filled), , drop = FALSE]
   colnames(means_out) <- axes_chr
 
-  list(
+  out <- list(
     means          = means_out,
     n_filled       = state$reservoir_filled,
     windows_total  = state$windows_total,
     passing_seen   = state$passing_seen,
-    scratch_path   = state$scratch_path,
-    slot_size      = state$slot_size,
     nominal_sr     = state$nominal_sr,
     axes           = axes_chr,
     n_axes         = n_axes,
-    reservoir_size = state$reservoir_size
+    reservoir_size = state$reservoir_size,
+    write_to_file  = state$write_to_file
   )
+
+  if (state$write_to_file) {
+    out$scratch_path <- state$scratch_path
+    out$slot_size    <- state$slot_size
+  } else {
+    out$raw <- state$reservoir_raw[seq_len(state$reservoir_filled)]
+  }
+
+  out
 }
 
 #' Select a diverse subset of orientations via Farthest Point Sampling
@@ -402,36 +427,46 @@ select_fps <- function(reservoir, k, restarts = 8, rng_seed = 42) {
 reconstruct_selected <- function(reservoir, selected_idx,
                                  delete_scratch = FALSE) {
   n_axes    <- reservoir$n_axes
-  slot_size <- reservoir$slot_size
-  rec_bytes <- .record_size_bytes(slot_size, n_axes)
 
-  con <- file(reservoir$scratch_path, open = "rb")
-  windows <- tryCatch({
-    out <- vector("list", length(selected_idx))
-    for (k in seq_along(selected_idx)) {
-      slot   <- selected_idx[k]
-      offset <- (slot - 1) * rec_bytes
-      seek(con, where = offset, origin = "start")
-      n        <- readBin(con, integer(), n = 1, size = 4)
-      ts       <- readBin(con, double(), n = slot_size, size = 8)
-      raw_flat <- readBin(con, double(), n = slot_size * n_axes, size = 8)
-      raw      <- matrix(raw_flat, nrow = slot_size,
-                         ncol = n_axes, byrow = TRUE)
-      row_id   <- readBin(con, integer(), n = slot_size, size = 4)
+  if (reservoir$write_to_file) {
+    slot_size <- reservoir$slot_size
+    rec_bytes <- .record_size_bytes(slot_size, n_axes)
 
-      raw_mat <- raw[seq_len(n), , drop = FALSE]
-      colnames(raw_mat) <- reservoir$axes
+    con <- file(reservoir$scratch_path, open = "rb")
+    windows <- tryCatch({
+      out <- vector("list", length(selected_idx))
+      for (k in seq_along(selected_idx)) {
+        slot   <- selected_idx[k]
+        offset <- (slot - 1) * rec_bytes
+        seek(con, where = offset, origin = "start")
+        n        <- readBin(con, integer(), n = 1, size = 4)
+        ts       <- readBin(con, double(), n = slot_size, size = 8)
+        raw_flat <- readBin(con, double(), n = slot_size * n_axes, size = 8)
+        raw      <- matrix(raw_flat, nrow = slot_size,
+                           ncol = n_axes, byrow = TRUE)
+        row_id   <- readBin(con, integer(), n = slot_size, size = 4)
 
-      out[[k]] <- list(timestamp = ts[seq_len(n)],
-                       data = raw_mat,
-                       mean = apply(raw_mat, 2, mean),
-                       source_row = row_id[seq_len(n)])
+        raw_mat <- raw[seq_len(n), , drop = FALSE]
+        colnames(raw_mat) <- reservoir$axes
+
+        out[[k]] <- list(timestamp = ts[seq_len(n)],
+                         data = raw_mat,
+                         source_row = row_id[seq_len(n)],
+                         mean = apply(raw_mat, 2, mean))
+      }
+      out
+    }, finally = close(con))
+
+    if (delete_scratch && file.exists(reservoir$scratch_path)) {
+      file.remove(reservoir$scratch_path)
     }
-    out
-  }, finally = close(con))
+  } else {
+    windows <- reservoir$raw[selected_idx]
 
-  if (delete_scratch && file.exists(reservoir$scratch_path)) {
-    file.remove(reservoir$scratch_path)
+    for (i in seq_along(selected_idx)) {
+      windows[[i]]$mean <- reservoir$means[selected_idx[i],]
+      colnames(windows[[i]]$data) <- reservoir$axes
+    }
   }
 
   windows
@@ -452,7 +487,12 @@ reconstruct_selected <- function(reservoir, selected_idx,
 #' @return A list with FPS-selected \code{orientations}, their raw mean
 #'   vectors (\code{means_raw}), and reconstructed raw \code{windows}.
 #' @export
-mine_and_select <- function(object, data_col, ts_col, axes, window_sec, k,
+mine_and_select <- function(object,
+                            k,
+                            data_col = NULL,
+                            ts_col = NULL,
+                            axes = NULL,
+                            window_sec = 5,
                             restarts = 8, rng_seed = 42,
                             delete_scratch = TRUE, ...) {
   reservoir <- mine_reservoir(

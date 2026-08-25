@@ -6,11 +6,11 @@
 \usage{
 mine_and_select(
   object,
-  data_col,
-  ts_col,
-  axes,
-  window_sec,
   k,
+  data_col = NULL,
+  ts_col = NULL,
+  axes = NULL,
+  window_sec = 5,
   restarts = 8,
   rng_seed = 42,
   delete_scratch = TRUE,

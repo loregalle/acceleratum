@@ -304,36 +304,45 @@
 #' @param row_w The sample burst-row ID
 #' @noRd
 .write_slot <- function(state, slot, ts_w, raw_w, row_w) {
-  n <- length(ts_w)
-  if (n > state$slot_size) {
-    stop(sprintf(
-      paste0(
-        "A stationary window required %d samples but `slot_size` is only %d. ",
-        "Re-run mine_reservoir() with a larger slot_size (e.g. slot_size = %d) ",
-        "or adjust window_sec / sr_tol."
-      ),
-      n, state$slot_size, n
-    ))
+  if (isTRUE(state$write_to_file)) {
+    n <- length(ts_w)
+    if (n > state$slot_size) {
+      stop(sprintf(
+        paste0(
+          "A stationary window required %d samples but `slot_size` is only %d. ",
+          "Re-run mine_reservoir() with a larger slot_size (e.g. slot_size = %d) ",
+          "or adjust window_sec / sr_tol."
+        ),
+        n, state$slot_size, n
+      ))
+    }
+
+    # size of padding needed to fill slot size
+    pad_n   <- state$slot_size - n
+    # pad timestamp
+    ts_pad  <- c(ts_w, numeric(pad_n))
+    # pad raw value matrix
+    raw_pad <- rbind(raw_w, matrix(0, nrow = pad_n, ncol = ncol(raw_w)))
+    # pad row ID
+    row_pad <- c(row_w, integer(pad_n))
+
+    # Offset to slot initial position
+    offset <- (slot - 1) * state$record_size_bytes
+    # reposition connection in scratch file
+    seek(state$scratch_con, where = offset, origin = "start")
+    # write data to scratch file
+    writeBin(as.integer(n), state$scratch_con, size = 4)
+    writeBin(as.double(ts_pad), state$scratch_con, size = 8)
+    writeBin(as.double(t(raw_pad)), state$scratch_con, size = 8)
+    writeBin(as.integer(row_pad), state$scratch_con, size = 4)
+  } else {
+    state$reservoir_raw[[slot]] <- list(
+      timestamp  = ts_w,
+      data = raw_w,
+      source_row = row_w
+    )
   }
-
-  # size of padding needed to fill slot size
-  pad_n   <- state$slot_size - n
-  # pad timestamp
-  ts_pad  <- c(ts_w, numeric(pad_n))
-  # pad raw value matrix
-  raw_pad <- rbind(raw_w, matrix(0, nrow = pad_n, ncol = ncol(raw_w)))
-  # pad row ID
-  row_pad <- c(row_w, integer(pad_n))
-
-  # Offset to slot initial position
-  offset <- (slot - 1) * state$record_size_bytes
-  # reposition connection in scratch file
-  seek(state$scratch_con, where = offset, origin = "start")
-  # write data to scratch file
-  writeBin(as.integer(n), state$scratch_con, size = 4)
-  writeBin(as.double(ts_pad), state$scratch_con, size = 8)
-  writeBin(as.double(t(raw_pad)), state$scratch_con, size = 8)
-  writeBin(as.integer(row_pad), state$scratch_con, size = 4)
+  invisible(NULL)
 }
 
 #' Pairwise angular distance

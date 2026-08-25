@@ -118,8 +118,6 @@ vmf_kde <- function(x,
 #' @param fixed_ax Optional character string (`"x"`, `"y"`, `"z"`)
 #'   naming an axis to hold fixed, restricting the rotation to
 #'   the remaining two axes. Ignored for 2-column input.
-#' @param n_grid passed to [vmf_kde()]. If null, defaults to 4320 for the 3D
-#'   case and 1440 for the 2D case.
 #' @param ... other arguments passed to [vmf_kde()]
 #' @details
 #' The rotation is derived from the empirical directional density of
@@ -145,7 +143,6 @@ rotation_to_align <- function(x,
                               align_secondary = NULL,
                               secondary_policy = c("max", "min"),
                               fixed_ax = NULL,
-                              n_grid = NULL,
                               ...) {
   secondary_policy <- match.arg(secondary_policy)
   if (!inherits(x, "matrix") || !ncol(x) %in% c(2, 3)) {
@@ -292,12 +289,8 @@ rotation_to_align <- function(x,
     }
   }
 
-  if (is.null(n_grid)) {
-    n_grid <- ifelse(n_ax == 3, 4320, 1440)
-  }
-
   # find directional density. On the sphere if 3D, on the circle if 2D.
-  dens <- vmf_kde(x[,rot_ax], n_grid = n_grid, ...)
+  dens <- vmf_kde(x[,rot_ax], ...)
   dens_peak <- dens[which.max(dens[,"density"]), rot_ax, drop = FALSE][1,]
 
   if (!is.null(align_secondary)) {

@@ -10,7 +10,6 @@ rotation_to_align(
   align_secondary = NULL,
   secondary_policy = c("max", "min"),
   fixed_ax = NULL,
-  n_grid = NULL,
   ...
 )
 }
@@ -31,9 +30,6 @@ Ignored if \code{align_secondary = NULL}. See details.}
 \item{fixed_ax}{Optional character string (\code{"x"}, \code{"y"}, \code{"z"})
 naming an axis to hold fixed, restricting the rotation to
 the remaining two axes. Ignored for 2-column input.}
-
-\item{n_grid}{passed to \code{\link[=vmf_kde]{vmf_kde()}}. If null, defaults to 4320 for the 3D
-case and 1440 for the 2D case.}
 
 \item{...}{other arguments passed to \code{\link[=vmf_kde]{vmf_kde()}}}
 }

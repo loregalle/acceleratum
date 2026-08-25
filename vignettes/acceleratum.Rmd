@@ -393,17 +393,17 @@ For simplicity, a wrapper for the three steps is provided: `mine_and_select()`.
 # bench data.
 
 data(bench)
-bench <- burst(bench, "accelerations_raw",
+bench <- burst(bench,
+               data_col = "accelerations_raw",
                # a current limitation to our functions is that
                # a timestamp column must be defined
                ts_col = "timestamp")
 ```
 
 ```{r}
-# scratch file name defaults to "./tmp"
 reservoir <- mine_reservoir(
-  bench,           # can be a path to a .csv file with data in burst format
-  overwrite = TRUE # should the scratch file be overwritten?
+  bench,
+  reservoir_size = 100
 )
 ```
 
@@ -413,8 +413,18 @@ selected_points <- select_fps(reservoir, k = 6)
 
 ```{r}
 seg_list_unknown <- reconstruct_selected(reservoir,
-                                         selected_points$selected_idx,
-                                         delete_scratch = TRUE)
+                                         selected_points$selected_idx)
+```
+
+`mine_and_select()` is a useful wrapper for the last three steps
+```{r}
+seg_list_unknown_alt <- mine_and_select(
+  bench,
+  k = 6,
+  reservoir_size = 100
+)
+
+all.equal(seg_list_unknown_alt, seg_list_unknown)
 ```
 
 Note that, due to further point sampling approach and the
@@ -534,7 +544,8 @@ to the input data to have it aligned with the expected values.
 ```{r}
 R <- rotation_to_align(acc_ds,
                        align_to = "-z",
-                       fixed_ax = "x")
+                       fixed_ax = "x",
+                       n_grid = 360*3)
 
 R
 ```
@@ -566,7 +577,8 @@ consisting of a Rodrigues rotation, is used.
 
 ```{r}
 R <- rotation_to_align(acc_ds,
-                       align_to = "-z")
+                       align_to = "-z",
+                       n_grid = 360*3)
 
 R
 ```

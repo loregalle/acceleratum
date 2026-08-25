@@ -16,7 +16,8 @@ mine_reservoir(
   var_thresh = 2e-04,
   mag_thresh = 0.8,
   min_samples_per_window = 3,
-  reservoir_size = 80000,
+  reservoir_size = 4000,
+  write_to_file = FALSE,
   slot_size = NULL,
   scratch_path = "./tmp",
   overwrite = FALSE,
@@ -51,6 +52,9 @@ mean per-axis variance, minimum window mean-vector magnitude).}
 is evaluated.}
 
 \item{reservoir_size}{Maximum number of windows retained.}
+
+\item{write_to_file}{If TRUE, writes the reservoir to an external
+scratch file.}
 
 \item{slot_size}{Fixed sample capacity per scratch-file record; estimated
 from \code{window_sec} and \code{sr} if \code{NULL}.}
