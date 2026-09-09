@@ -125,23 +125,22 @@ process_annotations <- function(acc, annotations, g = 1) {
 #' off-diagonal (misalignment) terms and/or a bias term.
 #'
 #' @param rows A list of \code{list(gvec = c(gx,gy,gz), m = c(ax,ay,az))}.
+#' @param nparam Number of paramaters to be estimated.
 #' @param diagonal_only If \code{TRUE}, fit only \code{diag(sx,sy,sz)}.
 #'   If \code{FALSE}, fit a full 3x3 matrix.
 #' @param estimate_bias If \code{TRUE}, include a bias term.
 #'
 #' @returns A list with \code{A} (design matrix) and \code{y} (observations).
 #' @noRd
-.assemble_ls <- function(rows, diagonal_only, estimate_bias) {
+.assemble_ls <- function(rows, nparam, diagonal_only, estimate_bias) {
+
   n <- length(rows)
 
-  ncol_A <- if (diagonal_only) 3L else 9L
-
   if (estimate_bias) {
-    ncol_A <- ncol_A + 3
-    idx_bias <- ncol_A - (2:0)
+    idx_bias <- nparam - (2:0)
   }
 
-  A <- matrix(0, nrow = n * 3L, ncol = ncol_A)
+  A <- matrix(0, nrow = n * 3L, ncol = nparam)
   y <- numeric(n * 3L)
 
   for (i in seq_len(n)) {
@@ -213,7 +212,7 @@ process_annotations <- function(acc, annotations, g = 1) {
       rows[[i]]$gvec <- mcorr / nrm * g
     }
 
-    asmb <- .assemble_ls(rows, diagonal_only, estimate_bias)
+    asmb <- .assemble_ls(rows, nparam, diagonal_only, estimate_bias)
     fit  <- qr.solve(asmb$A, asmb$y)
 
     if (diagonal_only) {
