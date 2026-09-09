@@ -367,16 +367,16 @@ test_that("apply_rotation preserves vector norms", {
   expect_equal(sqrt(rowSums(x^2)), sqrt(rowSums(rotated^2)), tolerance = 1e-8)
 })
 
-test_that("apply_rotation preserves aclrtm_accelerometery class and attributes", {
-  skip_if_not(exists("new_accelerometery"), "new_accelerometery constructor not available")
+test_that("apply_rotation preserves aclrtm_accelerometry class and attributes", {
+  skip_if_not(exists("new_accelerometry"), "new_accelerometry constructor not available")
 
   x <- matrix(rnorm(9), ncol = 3, dimnames = list(NULL, c("x", "y", "z")))
-  x <- new_accelerometery(x, sampling_rate = 100, start_time = 0)
+  x <- new_accelerometry(x, sampling_rate = 100, start_time = 0)
 
   R <- diag(3)
   rotated <- apply_rotation(x, R)
 
-  expect_s3_class(rotated, "aclrtm_accelerometery")
+  expect_s3_class(rotated, "aclrtm_accelerometry")
   expect_equal(attr(rotated, "sampling_rate"), 100)
   expect_equal(attr(rotated, "start_time"), 0)
 })

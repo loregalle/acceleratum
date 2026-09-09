@@ -1,11 +1,11 @@
 #' @export
-print.aclrtm_accelerometery <- function(x, ...) {
+print.aclrtm_accelerometry <- function(x, ...) {
   sr <- attr(x, "sampling_rate")
   st <- attr(x, "start_time")
   axes <- paste(colnames(x), collapse = "")
 
   cat(sprintf(
-    "<aclrtm_accelerometery>  [%d samples \u00d7 %d axes (%s)]",
+    "<aclrtm_accelerometry>  [%d samples \u00d7 %d axes (%s)]",
     nrow(x), ncol(x), axes
   ))
 
@@ -27,14 +27,14 @@ print.aclrtm_accelerometery <- function(x, ...) {
 }
 
 #' @export
-head.aclrtm_accelerometery <- function(x, n = 6L, ...) {
+head.aclrtm_accelerometry <- function(x, n = 6L, ...) {
   sr <- attr(x, "sampling_rate")
   st <- attr(x, "start_time")
-  new_accelerometery(NextMethod(), sampling_rate = sr, start_time = st)
+  new_accelerometry(NextMethod(), sampling_rate = sr, start_time = st)
 }
 
 #' @export
-tail.aclrtm_accelerometery <- function(x, n = 6L, ...) {
+tail.aclrtm_accelerometry <- function(x, n = 6L, ...) {
   sr <- attr(x, "sampling_rate")
   st <- attr(x, "start_time")
 
@@ -54,11 +54,11 @@ tail.aclrtm_accelerometery <- function(x, n = 6L, ...) {
     st <- NULL
   }
 
-  new_accelerometery(result, sampling_rate = sr, start_time = st)
+  new_accelerometry(result, sampling_rate = sr, start_time = st)
 }
 
 #' @export
-`[.aclrtm_accelerometery` <- function(x, i, j, ..., drop = FALSE) {
+`[.aclrtm_accelerometry` <- function(x, i, j, ..., drop = FALSE) {
 
   sr <- attr(x, "sampling_rate")
   st <- attr(x, "start_time")
@@ -72,7 +72,7 @@ tail.aclrtm_accelerometery <- function(x, n = 6L, ...) {
 
   # if no row subsetting, sampling_rate and start_time remain unchanged
   if (missing(i)) {
-    return(new_accelerometery(result,
+    return(new_accelerometry(result,
                               sampling_rate = sr,
                               start_time    = st))
   }
@@ -84,7 +84,7 @@ tail.aclrtm_accelerometery <- function(x, n = 6L, ...) {
 
   # if empty selection, early return
   if (length(idx) == 0L) {
-    return(new_accelerometery(result,
+    return(new_accelerometry(result,
                               sampling_rate = NULL,
                               start_time    = NULL))
   }
@@ -110,11 +110,11 @@ tail.aclrtm_accelerometery <- function(x, n = 6L, ...) {
     sr <- NULL
   }
 
-  new_accelerometery(result, sampling_rate = sr, start_time = st)
+  new_accelerometry(result, sampling_rate = sr, start_time = st)
 }
 
 #' @export
-plot.aclrtm_accelerometery <- function(x, y, axes = "xyz", ...) {
+plot.aclrtm_accelerometry <- function(x, y, axes = "xyz", ...) {
 
   # row subsetting via y
   if (!missing(y)) {

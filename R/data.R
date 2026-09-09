@@ -1,4 +1,4 @@
-#' Accelerometery Data for Bench Calibration
+#' Accelerometry Data for Bench Calibration
 #'
 #' Data from a triaxial accelerometer device mounted on a cubic frame and
 #' rotated through 6 known orientations. Sampling rate is fixed at 8 Hz.
@@ -44,9 +44,9 @@
 #'   [segment_select()]
 "bench_annotations"
 
-#' Muskox Accelerometery Data
+#' Muskox Accelerometry Data
 #'
-#' About 4 days of triaxial accelerometery data from a device mounted on a
+#' About 4 days of triaxial accelerometry data from a device mounted on a
 #' collar and deployed on a muskox in Zackenberg Research Station, Greenland.
 #' Sampling rate is fixed at 8 Hz.
 #'

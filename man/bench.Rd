@@ -3,7 +3,7 @@
 \docType{data}
 \name{bench}
 \alias{bench}
-\title{Accelerometery Data for Bench Calibration}
+\title{Accelerometry Data for Bench Calibration}
 \format{
 A data frame with 29 rows and 3 columns:
 \describe{

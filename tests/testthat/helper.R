@@ -2,7 +2,7 @@ make_test_accel <- function(n = 10, axes = "xyz", sampling_rate = 5,
                             start_time = as.POSIXct("2024-01-01", tz = "UTC")) {
   x <- matrix(seq_len(n * nchar(axes)), nrow = n)
   colnames(x) <- strsplit(axes, "")[[1]]
-  new_accelerometery(x, sampling_rate = sampling_rate, start_time = start_time)
+  new_accelerometry(x, sampling_rate = sampling_rate, start_time = start_time)
 }
 
 make_burst_df <- function(n = 3, axes = "xyz", nrow_each = 4) {

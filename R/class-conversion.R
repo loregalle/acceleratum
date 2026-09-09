@@ -1,12 +1,12 @@
-#' Convert an aclrtm_accelerometery object to an aclrtm_burst object
+#' Convert an aclrtm_accelerometry object to an aclrtm_burst object
 #'
-#' Splits the accelerometery matrix into a list of burst matrices and wraps
+#' Splits the accelerometry matrix into a list of burst matrices and wraps
 #' the result in an \code{aclrtm_burst} object.  Bursts are defined either
 #' by duration (\code{burst_length}, in seconds) or by number of samples
 #' (\code{burst_size}).  \code{burst_length} takes precedence when both are
 #' supplied.
 #'
-#' @param x           An \code{aclrtm_accelerometery} object.
+#' @param x           An \code{aclrtm_accelerometry} object.
 #' @param burst_length Duration of each burst in seconds.
 #'   Takes precedence over \code{burst_size} when both are supplied.
 #' @param burst_size  Number of samples per burst. Used only
@@ -27,14 +27,14 @@
 #'     \item Neither present: no timestamp column.
 #'   }
 #'   Note that converting an \code{aclrtm_burst} object to
-#'   \code{aclrtm_accelerometery} via \code{\link{burst_to_accelerometery}} and
-#'   back again with \code{accelerometery_to_burst} is not a lossless round-trip.
-#'   An \code{aclrtm_accelerometery} object does not store individual timestamps
+#'   \code{aclrtm_accelerometry} via \code{\link{burst_to_accelerometry}} and
+#'   back again with \code{accelerometry_to_burst} is not a lossless round-trip.
+#'   An \code{aclrtm_accelerometry} object does not store individual timestamps
 #'   — only \code{start_time} and \code{sampling_rate} — and assumes a fixed,
 #'   regular sampling interval across the entire recording.  Consequently, if
 #'   the original \code{aclrtm_burst} object had irregular timestamps (e.g.
 #'   variable gaps between bursts) or variable burst sizes (i.e. ragged
-#'   bursts), that information is not recoverable from the accelerometery
+#'   bursts), that information is not recoverable from the accelerometry
 #'   object alone.  The reconstructed burst object will have uniformly spaced
 #'   timestamps and equal-sized bursts (except possibly the last), regardless
 #'   of the original structure.
@@ -42,14 +42,14 @@
 #'
 #' @return A \code{aclrtm_burst} object.
 #' @export
-accelerometery_to_burst <- function(x,
+accelerometry_to_burst <- function(x,
                                     burst_length = NULL,
                                     burst_size   = NULL,
                                     ts_col       = "timestamp",
                                     data_col     = "burst") {
 
-  if (!inherits(x, "aclrtm_accelerometery")) {
-    stop("`x` must be an aclrtm_accelerometery object.", call. = FALSE)
+  if (!inherits(x, "aclrtm_accelerometry")) {
+    stop("`x` must be an aclrtm_accelerometry object.", call. = FALSE)
   }
   if (!is.character(ts_col) || length(ts_col) != 1L) {
     stop("`ts_col` must be a single character string.", call. = FALSE)
@@ -161,24 +161,24 @@ accelerometery_to_burst <- function(x,
 }
 
 
-#' @rdname accelerometery_to_burst
+#' @rdname accelerometry_to_burst
 #' @export
 a2b <- function(x,
                 burst_length = NULL,
                 burst_size   = NULL,
                 ts_col       = "timestamp",
                 data_col     = "burst") {
-  accelerometery_to_burst(x,
+  accelerometry_to_burst(x,
                           burst_length = burst_length,
                           burst_size   = burst_size,
                           ts_col       = ts_col,
                           data_col     = data_col)
 }
 
-#' Converts an aclrtm_burst object to an aclrtm_accelerometery object
+#' Converts an aclrtm_burst object to an aclrtm_accelerometry object
 #'
 #' Stacks all burst matrices into a single matrix and
-#' constructs an \code{aclrtm_accelerometery} object.  If a timestamp column
+#' constructs an \code{aclrtm_accelerometry} object.  If a timestamp column
 #' is present, \code{start_time} is taken from its first value and
 #' \code{sampling_rate} is estimated as the median number of samples per
 #' second across bursts.  If no timestamp column is defined, \code{start_time}
@@ -189,19 +189,19 @@ a2b <- function(x,
 #' @param start_time    A \code{POSIXct} scalar, a positive numeric, or
 #'   \code{NULL} (default).
 #' @param ...           Additional arguments forwarded to
-#'   \code{accelerometery.matrix()}.
+#'   \code{accelerometry.matrix()}.
 #'
 #' @details
-#'   Converting to \code{aclrtm_accelerometery} and back via
-#'   \code{\link{accelerometery_to_burst}} is not a lossless round-trip.
+#'   Converting to \code{aclrtm_accelerometry} and back via
+#'   \code{\link{accelerometry_to_burst}} is not a lossless round-trip.
 #'   Individual burst timestamps and variable burst sizes are not retained in
-#'   the accelerometery representation, which stores only \code{start_time} and
+#'   the accelerometry representation, which stores only \code{start_time} and
 #'   \code{sampling_rate} and assumes a regular sampling interval throughout.
 #'   All additional columns present in the original object will also be lost.
 #'
-#' @return An \code{aclrtm_accelerometery} object.
+#' @return An \code{aclrtm_accelerometry} object.
 #' @export
-burst_to_accelerometery <- function(x,
+burst_to_accelerometry <- function(x,
                                     sampling_rate = NULL,
                                     start_time    = NULL,
                                     ...) {
@@ -295,18 +295,18 @@ burst_to_accelerometery <- function(x,
 
   }
 
-  # build accelerometery object
-  accelerometery.matrix(mat,
+  # build accelerometry object
+  accelerometry.matrix(mat,
                         axes          = axes,
                         sampling_rate = sampling_rate,
                         start_time    = start_time,
                         ...)
 }
 
-#' @rdname burst_to_accelerometery
+#' @rdname burst_to_accelerometry
 #' @export
 b2a <- function(x, sampling_rate = NULL, start_time = NULL, ...) {
-  burst_to_accelerometery(x,
+  burst_to_accelerometry(x,
                           sampling_rate = sampling_rate,
                           start_time    = start_time,
                           ...)

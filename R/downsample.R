@@ -1,8 +1,8 @@
-#' Downsample accelerometery data
+#' Downsample accelerometry data
 #'
 #' Description
 #'
-#' @param acc accelerometery data input in matrix-like format
+#' @param acc accelerometry data input in matrix-like format
 #' @param ... passed to methods
 #' @param from_sr Sampling rate of data input. Can be NULL.
 #' @param to_sr Sampling rate of output. Must be lower than, and be a
@@ -13,7 +13,7 @@
 #'   simple downsampling.
 #' @param ... Arguments passed to \code{FUN}
 #'
-#' @returns An object of class \code{c("aclrtm_accelerometery","matrix","array")}.
+#' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 #' @export
 downsample <- function(acc, ...) {
   UseMethod("downsample")
@@ -78,7 +78,7 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
     # Subsample and return
     out_i <- seq(1, nrow(acc), by = ds_factor)
 
-    accelerometery(suppressMessages(acc[out_i,]),
+    accelerometry(suppressMessages(acc[out_i,]),
                    sampling_rate = to_sr,
                    start_time = acc_st)
   } else {
@@ -93,7 +93,7 @@ downsample.matrix <- function(acc, to_sr = NULL, from_sr = NULL,
 
     colnames(out_m) <- cn
 
-    accelerometery(out_m,
+    accelerometry(out_m,
                    sampling_rate = to_sr,
                    start_time = acc_st)
   }

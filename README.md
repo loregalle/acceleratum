@@ -1,6 +1,6 @@
 # acceleratum <img src="man/figures/logo.png" align="right" height="138" alt="" />
 
-An R package to aid in bench calibration of triaxial accelerometery devices.  
+An R package to aid in bench calibration of triaxial accelerometry devices.  
 
 Install with
 ```

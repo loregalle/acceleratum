@@ -1,11 +1,11 @@
 # print ----
-test_that("print.aclrtm_accelerometery displays header and matrix", {
+test_that("print.aclrtm_accelerometry displays header and matrix", {
   x <- make_test_accel(n = 3)
   expect_snapshot(print(x))
 })
 
-test_that("print.aclrtm_accelerometery handles missing attributes gracefully", {
-  x <- new_accelerometery(matrix(1:6, 3, 2, dimnames = list(NULL, c("x","y"))))
+test_that("print.aclrtm_accelerometry handles missing attributes gracefully", {
+  x <- new_accelerometry(matrix(1:6, 3, 2, dimnames = list(NULL, c("x","y"))))
   expect_snapshot(print(x))
 })
 
@@ -28,7 +28,7 @@ test_that("tail shifts start_time forward when sampling_rate is known", {
 })
 
 test_that("tail drops start_time (with message) when sampling_rate is unknown", {
-  x <- new_accelerometery(matrix(1:20, 10, 2, dimnames = list(NULL, c("x","y"))),
+  x <- new_accelerometry(matrix(1:20, 10, 2, dimnames = list(NULL, c("x","y"))),
                           start_time = as.POSIXct("2024-01-01", tz = "UTC"))
   expect_message(t <- tail(x, 3), "cannot be")
   expect_null(attr(t, "start_time"))
@@ -73,7 +73,7 @@ test_that("empty row selection returns object with no attributes", {
 test_that("subsetting to a single row falls back to a plain vector when drop=TRUE", {
   x <- make_test_accel(n = 5)
   sub <- x[1, , drop = TRUE]
-  expect_false(inherits(sub, "aclrtm_accelerometery"))
+  expect_false(inherits(sub, "aclrtm_accelerometry"))
 })
 
 # plotting ----

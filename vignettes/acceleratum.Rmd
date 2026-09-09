@@ -70,11 +70,11 @@ library("acceleratum")
 Functions dealing with parameter estimation are time-agnostic. As such,
 these were written to handle data in matrix format.
 
-## The `aclrtm_accelerometery` class
+## The `aclrtm_accelerometry` class
 To make it easier to visualise and print matrices of accelerometer data,
 `acceleratum` provides a helper class which use is largely optional:
-`aclrtm_accelerometery`. An `aclrtm_accelerometery` can be initialised using
-the function `accelerometery()`
+`aclrtm_accelerometry`. An `aclrtm_accelerometry` can be initialised using
+the function `accelerometry()`
 
 ```{r}
 set.seed(42)
@@ -83,30 +83,30 @@ head(some_data)
 ```
 
 ```{r}
-# aclrtm_accelerometery from a numeric vector assumes repeating x, y, z order:
+# aclrtm_accelerometry from a numeric vector assumes repeating x, y, z order:
 # x1, y1, z1, x2, y2, z2, ... , xn, yn, zn
-acc <- accelerometery(some_data)
+acc <- accelerometry(some_data)
 head(acc)
 ```
 ```{r}
-# aclrtm_accelerometery from matrix
+# aclrtm_accelerometry from matrix
 # Note how the vector was now arranged column-wise. That's due to the behaviour
 # of matrix() that defaults to byrow = FALSE
 some_data <- matrix(some_data, ncol = 3)
-acc <- accelerometery(some_data)
+acc <- accelerometry(some_data)
 head(acc)
 ```
 
 ```{r}
-# aclrtm_accelerometery from data.frame
+# aclrtm_accelerometry from data.frame
 some_data_df <- as.data.frame(some_data)
 colnames(some_data_df) <- c("x", "y", "z")
-acc <- accelerometery(some_data_df)
+acc <- accelerometry(some_data_df)
 head(acc)
 ```
 
 ```{r}
-# Plotting method for aclrtm_accelerometery objects
+# Plotting method for aclrtm_accelerometry objects
 plot(acc)
 ```
 
@@ -114,7 +114,7 @@ Optionally, arguments `sampling_rate` and `start_time` can be provided
 and will be set as attributes.
 When available, subsetting rows will account for the shift.
 ```{r}
-acc <- accelerometery(some_data,
+acc <- accelerometry(some_data,
                       axes = "xyz",
                       sampling_rate = 4, # in Hz
                       start_time = as.POSIXct("2026-01-01 10:00:00",
@@ -137,12 +137,12 @@ some_data_df$timestamp <- seq(as.POSIXct("2026-01-01 10:00:00",
                               by = 1/4,
                               length.out = nrow(some_data_df))
 
-acc <- accelerometery(some_data_df,
+acc <- accelerometry(some_data_df,
                       ts_col = "timestamp")
 head(acc)
 ```
 
-Note that an `aclrtm_accelerometery` object uses attributes `sampling_rate`
+Note that an `aclrtm_accelerometry` object uses attributes `sampling_rate`
 and `start_time` just as an aid
 in plotting, but does not store the timestamp of each observation and assumes
 consistent sampling rate across the data. If your data comes from deployments
@@ -203,28 +203,28 @@ head(brst)
 A print method is available for `aclrtm_burst` objects and a
 `write_burst()` function is provided to write burst objects to external files.  
 
-An `aclrtm_burst` object can then be converted to `aclrtm_accelerometery` using
-`burst_to_accelerometery()` or its alias `b2a()`
+An `aclrtm_burst` object can then be converted to `aclrtm_accelerometry` using
+`burst_to_accelerometry()` or its alias `b2a()`
 
 ```{r}
 acc <- b2a(brst)
 head(acc)
 ```
 
-and the inverse operation is possible with `accelerometery_to_burst()` or its
+and the inverse operation is possible with `accelerometry_to_burst()` or its
 alias `a2b()`
 ```{r}
 brst_new <- a2b(acc, 5)
 head(brst_new)
 ```
 
-Note that converting an `aclrtm_burst` object to `aclrtm_accelerometery` and
+Note that converting an `aclrtm_burst` object to `aclrtm_accelerometry` and
 back again is not a
-lossless round-trip. As noted above, an `aclrtm_accelerometery` object does not
+lossless round-trip. As noted above, an `aclrtm_accelerometry` object does not
 store individual timestamps. Consequently, if the original
 aclrtm_burst object had irregular timestamps (e.g. variable gaps between bursts)
 or variable burst sizes (i.e. ragged bursts), that information is not
-recoverable from the `aclrtm_accelerometery` object alone. The reconstructed burst
+recoverable from the `aclrtm_accelerometry` object alone. The reconstructed burst
 object will have uniformly spaced timestamps and equal-sized bursts (except
 possibly the last), regardless of the original structure. All additional columns
 present in the original object will also be lost.

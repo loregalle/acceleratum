@@ -2,7 +2,7 @@
 #'
 #' Apply calibration to raw data
 #'
-#' @param A_sens Input accelerometery data with axes as columns and samples as
+#' @param A_sens Input accelerometry data with axes as columns and samples as
 #'   rows. See details. Can also be an `aclrtm_burst` object.
 #' @param S The scale factor diagonal matrix (can be provided as a vector)
 #' @param M The misalignment matrix
@@ -11,7 +11,7 @@
 #'   Can be provided as diagonal matrix or numeric vector of 1s and -1s,
 #'   or a character vector or character string of axes to flip around.
 #' @param b The bias vector
-#' @returns An `aclrtm_accelerometery` or `aclrtm_burst` object containing the
+#' @returns An `aclrtm_accelerometry` or `aclrtm_burst` object containing the
 #'   calibrated data \eqn{A_{true}^T}. If `A_sens` was provided as `aclrtm_burst`,
 #'   the output object will have the calibrated (burst) data in place of the
 #'   original data column.
@@ -192,7 +192,7 @@ apply_cal.matrix <- function(A_sens,
   A_true <- sweep(A_sens, 2L, b, "-") %*% solve(S) %*% t(solve(M)) %*% R
   colnames(A_true) <- colnames(A_sens)
 
-  new_accelerometery(A_true,
+  new_accelerometry(A_true,
                      sampling_rate = sr,
                      start_time    = st)
 }

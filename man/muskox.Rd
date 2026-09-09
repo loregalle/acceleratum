@@ -3,7 +3,7 @@
 \docType{data}
 \name{muskox}
 \alias{muskox}
-\title{Muskox Accelerometery Data}
+\title{Muskox Accelerometry Data}
 \format{
 A data frame with 51830 rows and 2 columns:
 \describe{
@@ -19,7 +19,7 @@ Data collected by the package authors
 muskox
 }
 \description{
-About 4 days of triaxial accelerometery data from a device mounted on a
+About 4 days of triaxial accelerometry data from a device mounted on a
 collar and deployed on a muskox in Zackenberg Research Station, Greenland.
 Sampling rate is fixed at 8 Hz.
 }

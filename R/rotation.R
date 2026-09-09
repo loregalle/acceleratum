@@ -382,8 +382,8 @@ rotation_to_align <- function(x,
 #' @export
 apply_rotation <- function(x, R) {
   out <- x %*% t(R)
-  if (inherits(x, "aclrtm_accelerometery")) {
-    new_accelerometery(
+  if (inherits(x, "aclrtm_accelerometry")) {
+    new_accelerometry(
       out,
       sampling_rate = attr(x, "sampling_rate"),
       start_time = attr(x, "start_time")

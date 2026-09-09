@@ -25,7 +25,7 @@ apply_cal(A_sens, S, M, R, b)
 )
 }
 \arguments{
-\item{A_sens}{Input accelerometery data with axes as columns and samples as
+\item{A_sens}{Input accelerometry data with axes as columns and samples as
 rows. See details. Can also be an \code{aclrtm_burst} object.}
 
 \item{S}{The scale factor diagonal matrix (can be provided as a vector)}
@@ -40,7 +40,7 @@ or a character vector or character string of axes to flip around.}
 \item{b}{The bias vector}
 }
 \value{
-An \code{aclrtm_accelerometery} or \code{aclrtm_burst} object containing the
+An \code{aclrtm_accelerometry} or \code{aclrtm_burst} object containing the
 calibrated data \eqn{A_{true}^T}. If \code{A_sens} was provided as \code{aclrtm_burst},
 the output object will have the calibrated (burst) data in place of the
 original data column.
