@@ -190,11 +190,16 @@ apply_cal.matrix <- function(A_sens,
   st <- attr(A_sens, "start_time")
 
   A_true <- sweep(A_sens, 2L, b, "-") %*% solve(S) %*% t(solve(M)) %*% R
+
   colnames(A_true) <- colnames(A_sens)
 
-  new_accelerometry(A_true,
-                     sampling_rate = sr,
-                     start_time    = st)
+  if ("aclrtm_accelerometry" %in% class(A_sens)) {
+    accelerometry.matrix(A_true,
+                         sampling_rate = sr,
+                         start_time    = st)
+  } else {
+    A_true
+  }
 }
 
 #' @export
