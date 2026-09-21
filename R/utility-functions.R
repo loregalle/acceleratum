@@ -159,11 +159,11 @@
       return(diag(3L))          # R is the identity
     }
     # if not codirectional, 180 degree rotation
-    seed_vec <- ifelse(        # use some simple logic to pick any
-      abs(from[1L]) < 0.9,     # vector different enough from "from"
-      c(1,0,0),
+    seed_vec <- if (abs(from[1L]) < 0.9) { # use some simple logic to pick any
+      c(1,0,0)                             # vector different enough from "from"
+    } else {
       c(0,1,0)
-    )
+    }
     k <- .gram_schmidt(seed_vec, from)      # orthogonalisation
     k <- k / sqrt(sum(k^2))                 # normalisation
     return(2 * outer(k, k) - diag(3))       # solving Rodrigues with theta = pi
