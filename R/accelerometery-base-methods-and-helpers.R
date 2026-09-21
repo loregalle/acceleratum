@@ -175,3 +175,9 @@ plot.aclrtm_accelerometry <- function(x, y, axes = "xyz", ...) {
 
   invisible(x)
 }
+
+#' @export
+as.matrix.aclrtm_accelerometry <- function(x, ...) {
+  class(x) <- class(x)[class(x) != "aclrtm_accelerometry"]
+  NextMethod(x)
+}
