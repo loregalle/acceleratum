@@ -9,19 +9,17 @@
 #' @param ts_col    Character scalar or NULL — name of the timestamp column.
 #'
 #' @return An object of class c("aclrtm_burst", "data.frame").
-new_burst <- function(df, data_col, axes, ts_col = NULL) {
-  stopifnot(is.data.frame(df))
+new_burst <- function(dt, data_col, axes, ts_col = NULL) {
+  stopifnot(is.data.table(dt))
   stopifnot(is.character(data_col), length(data_col) == 1L)
   stopifnot(is.character(axes),     length(axes)     == 1L)
   stopifnot(is.null(ts_col) || (is.character(ts_col) && length(ts_col) == 1L))
 
-  structure(
-    df,
-    class    = c("aclrtm_burst", "data.frame"),
-    data_col = data_col,
-    axes     = axes,
-    ts_col   = ts_col
-  )
+  setattr(dt, "data_col", data_col)
+  setattr(dt, "axes",     axes)
+  if (!is.null(ts_col)) setattr(dt, "ts_col", ts_col)
+  setattr(dt, "class", unique(c("aclrtm_burst", class(dt))))
+  dt
 }
 
 
@@ -37,8 +35,8 @@ validate_burst <- function(x) {
   if (!inherits(x, "aclrtm_burst")) {
     stop("`x` must inherit from \"aclrtm_burst\".", call. = FALSE)
   }
-  if (!is.data.frame(x)) {
-    stop("`x` must be a data.frame.", call. = FALSE)
+  if (!is.data.table(x)) {
+    stop("`x` must be a data.table.", call. = FALSE)
   }
 
   # required attributes
@@ -196,7 +194,7 @@ validate_burst <- function(x) {
 
 #' Create a aclrtm_burst object
 #'
-#' @param df        A data.frame.
+#' @param x         A data.table or data.frame.
 #' @param data_col  Name of the column that holds burst data.  The column may
 #'                  be a list of numeric vectors (used as-is) or a character
 #'                  vector of `sep`-separated numbers (parsed automatically).
@@ -210,38 +208,43 @@ validate_burst <- function(x) {
 #'
 #' @return An `aclrtm_burst` object.
 #' @export
-burst <- function(df, data_col, axes = NULL, ts_col = NULL, sep = " ") {
+burst <- function(x, data_col, axes = NULL, ts_col = NULL, sep = " ") {
 
   # input sanity
-  if (!is.data.frame(df)) {
-    stop("`df` must be a data.frame.", call. = FALSE)
+  if (!is.data.frame(x)) {
+    stop("`x` must be a data.frame or data.table.", call. = FALSE)
   }
   if (!is.character(data_col) || length(data_col) != 1L) {
     stop("`data_col` must be a single character string.", call. = FALSE)
   }
-  if (!data_col %in% names(df)) {
-    stop(sprintf("Column \"%s\" not found in `df`.", data_col), call. = FALSE)
+  if (!data_col %in% names(x)) {
+    stop(sprintf("Column \"%s\" not found in `x`.", data_col), call. = FALSE)
   }
   if (!is.null(ts_col)) {
     if (!is.character(ts_col) || length(ts_col) != 1L) {
       stop("`ts_col` must be NULL or a single character string.", call. = FALSE)
     }
-    if (!ts_col %in% names(df)) {
-      stop(sprintf("Column \"%s\" (ts_col) not found in `df`.", ts_col),
+    if (!ts_col %in% names(x)) {
+      stop(sprintf("Column \"%s\" (ts_col) not found in `x`.", ts_col),
            call. = FALSE)
     }
   }
 
+  # Copy
+  dt <- if (is.data.table(x)) copy(x) else as.data.table(x)
+
   # parse burst column if needed
-  raw <- df[[data_col]]
+  raw <- dt[[data_col]]
 
   if (is.list(raw)) {
     # could be matrices already or plain vectors — handle below
-    vec_list <- lapply(raw, function(el) {
-      if (is.matrix(el)) el          # pass through; checked later
-      else if (is.numeric(el)) el
-      else as.numeric(el)
-    })
+    vec_list     <- raw
+    needs_coerce <- !vapply(raw,
+                            function(el) is.matrix(el) || is.numeric(el),
+                            NA)
+    if (any(needs_coerce)) {
+      vec_list[needs_coerce] <- lapply(raw[needs_coerce], as.numeric)
+    }
   } else if (is.character(raw)) {
     vec_list <- lapply(
       strsplit(raw, sep, fixed = TRUE),
@@ -259,72 +262,92 @@ burst <- function(df, data_col, axes = NULL, ts_col = NULL, sep = " ") {
   }
 
   # resolve axes
-  if (is.null(axes)) {
+  # Assume that all elements in data_col are formatted as the same thing
+  # It's a safe assumption and speeds things up a little
+  is_mat <- is.matrix(vec_list[[1]])
 
-    vec_lengths <- vapply(vec_list, function(el) {
-      if (is.matrix(el)) NA_integer_
-      else                length(el)
-    }, integer(1L))
+  if (!is.null(axes)) {
+    col_names <- .parse_axes(axes)
+    if (is_mat && ncol(vec_list[[1]]) != length(col_names)) {
+      stop(paste(
+        "Axes provided differ from the number of axes in the `data_col`",
+        "matrices"
+      ), call. = FALSE)
+    }
+  } else {
 
-    non_empty_lengths <- vec_lengths[!is.na(vec_lengths) & vec_lengths > 0L]
+    if (!is_mat) {
+      vec_lengths <- lengths(vec_list)
 
-    if (length(non_empty_lengths) > 0L) {
-      g         <- Reduce(.gcd2, non_empty_lengths)
-      col_names <- .infer_axes_from_length(g)
-    } else {
-      # all elements are already matrices or all empty — derive from ncol
-      mat_ncols <- vapply(vec_list, function(el) {
-        if (is.matrix(el) && nrow(el) > 0L) ncol(el) else NA_integer_
-      }, integer(1L))
-      mat_ncols <- mat_ncols[!is.na(mat_ncols)]
+      non_empty_lengths <- vec_lengths[vec_lengths > 0L]
 
-      if (length(mat_ncols) > 0L) {
-        col_names <- .infer_axes(mat_ncols[[1L]])
+      if (length(non_empty_lengths) > 0) {
+        g         <- Reduce(.gcd2, unique(non_empty_lengths))
+        col_names <- .infer_axes_from_length(g)
       } else {
         col_names <- "x"
         warning("All bursts are empty; defaulting to axes = \"x\".", call. = FALSE)
+      }
+    } else {
+      col_names <- .infer_axes(ncol(vec_list[[1]]))
+      if (!is.null(colnames(vec_list[[1]])) &&
+          !identical(colnames(vec_list[[1]]), col_names)) {
+        stop(sprintf(
+          "Inferred axes names `%s` differ from colnames of matrices in data_col `%s`",
+          paste0(col_names),
+          paste0(colnames(vec_list[[1]])),
+          call. = FALSE
+        ))
       }
     }
 
     axes <- paste(col_names, collapse = "")
     message(sprintf("Note: `axes` not supplied; inferred axes = \"%s\".", axes))
 
-  } else {
-    col_names <- .parse_axes(axes)
   }
 
   n_axes <- length(col_names)
 
   # vecs to matrices
-  parsed <- lapply(vec_list, function(el) {
-    if (is.matrix(el)) {
-      # already a matrix: just (re)set column names if needed
-      if (!identical(colnames(el), col_names)) colnames(el) <- col_names
-      return(el)
-    }
-    # plain numeric vector
-    n <- length(el)
-    if (n == 0L) {
-      # empty burst → 0-row matrix with correct columns
-      return(matrix(numeric(0L), nrow = 0L, ncol = n_axes,
-                    dimnames = list(NULL, col_names)))
-    }
-    if (n %% n_axes != 0L) {
-      stop(
-        sprintf(
-          paste0("Burst vector length (%d) is not divisible by the number of ",
-                 "axes (%d for axes = \"%s\")."),
-          n, n_axes, axes
-        ),
-        call. = FALSE
-      )
-    }
-    matrix(el, ncol = n_axes, byrow = TRUE, dimnames = list(NULL, col_names))
-  })
+  dn <- list(NULL, col_names)
 
-  df[[data_col]] <- parsed
+  if (is_mat) {
+    vec_list <- lapply(vec_list,
+                       function(el) {
+                         if (!identical(colnames(el), col_names)) {
+                           colnames(el) <- col_names
+                         }
+                         return(el)
+                       })
+  } else {
+    vec_list <- lapply(vec_list, function(el) {
+
+      # plain numeric vector
+      n <- length(el)
+      if (n == 0L) {
+        # empty burst → 0-row matrix with correct columns
+        return(matrix(numeric(0L), nrow = 0L, ncol = n_axes,
+                      dimnames = dn))
+      } else if (n %% n_axes != 0L) {
+        stop(
+          sprintf(
+            paste0("Burst vector length (%d) is not divisible by the number of ",
+                   "axes (%d for axes = \"%s\")."),
+            n, n_axes, axes
+          ),
+          call. = FALSE
+        )
+      } else {
+        matrix(el, ncol = n_axes,
+               byrow = TRUE,
+               dimnames = dn)
+      }
+    })
+  }
+
+  set(dt, j = data_col, value = list(vec_list))
 
   # build & validate
-  obj <- new_burst(df, data_col = data_col, axes = axes, ts_col = ts_col)
+  obj <- new_burst(dt, data_col = data_col, axes = axes, ts_col = ts_col)
   validate_burst(obj)
 }

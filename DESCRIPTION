@@ -24,7 +24,8 @@ Imports:
     utils,
     shiny,
     shinyjs,
-    plotly
+    plotly,
+    data.table
 Suggests: 
     knitr,
     rmarkdown,

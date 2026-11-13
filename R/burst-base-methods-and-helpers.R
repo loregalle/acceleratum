@@ -1,26 +1,4 @@
 #' @export
-`[.aclrtm_burst` <- function(x, i, j, drop = FALSE) {
-  data_col <- attr(x, "data_col")
-  ts_col   <- attr(x, "ts_col")
-  axes     <- attr(x, "axes")
-
-  # Delegate to data.frame subsetting
-  result <- NextMethod()
-
-  # Re-wrap as burstdata only if the result is still a data.frame and the
-  # burst column survived
-  if (is.data.frame(result) && data_col %in% names(result)) {
-    new_ts <- if (!is.null(ts_col) && ts_col %in% names(result)) ts_col else NULL
-    result <- new_burst(result,
-                        data_col = data_col,
-                        axes = axes,
-                        ts_col = new_ts)
-  }
-
-  result
-}
-
-#' @export
 print.aclrtm_burst <- function(x, n = 10L, ...) {
   data_col <- attr(x, "data_col")
   ts_col   <- attr(x, "ts_col")

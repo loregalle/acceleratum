@@ -4,10 +4,10 @@
 \alias{burst}
 \title{Create a aclrtm_burst object}
 \usage{
-burst(df, data_col, axes = NULL, ts_col = NULL, sep = " ")
+burst(x, data_col, axes = NULL, ts_col = NULL, sep = " ")
 }
 \arguments{
-\item{df}{A data.frame.}
+\item{x}{A data.table or data.frame.}
 
 \item{data_col}{Name of the column that holds burst data.  The column may
 be a list of numeric vectors (used as-is) or a character

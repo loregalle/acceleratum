@@ -4,12 +4,9 @@
 \alias{new_burst}
 \title{Low-level constructor for a aclrtm_burst object}
 \usage{
-new_burst(df, data_col, axes, ts_col = NULL)
+new_burst(dt, data_col, axes, ts_col = NULL)
 }
 \arguments{
-\item{df}{A data.frame whose \code{data_col} column is already a list of
-numeric vectors.}
-
 \item{data_col}{Character scalar — name of the burst-data column.}
 
 \item{axes}{A string composed of any non-repeating combination of "x", "y",
@@ -17,6 +14,9 @@ numeric vectors.}
 to estimate axes from the data structure will be performed.}
 
 \item{ts_col}{Character scalar or NULL — name of the timestamp column.}
+
+\item{df}{A data.frame whose \code{data_col} column is already a list of
+numeric vectors.}
 }
 \value{
 An object of class c("aclrtm_burst", "data.frame").

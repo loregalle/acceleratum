@@ -11,6 +11,9 @@
 #'   Can be provided as diagonal matrix or numeric vector of 1s and -1s,
 #'   or a character vector or character string of axes to flip around.
 #' @param b The bias vector
+#' @param .copy Logical. If TRUE (default) carries operations on a copy. If
+#' FALSE, uses `data.table::set()` to modify in-place.
+#' @param ... Passed to methods.
 #' @returns An `aclrtm_accelerometry` or `aclrtm_burst` object containing the
 #'   calibrated data \eqn{A_{true}^T}. If `A_sens` was provided as `aclrtm_burst`,
 #'   the output object will have the calibrated (burst) data in place of the
@@ -39,7 +42,7 @@
 #' \deqn{A_{true}^T = (A_{sens}^T - b^T) S^{-1} (M^{-1})^T R}
 #'
 #' @export
-apply_cal <- function(A_sens, S, M, R, b) {
+apply_cal <- function(A_sens, S, M, R, b, ...) {
   UseMethod("apply_cal")
 }
 
@@ -49,7 +52,8 @@ apply_cal.matrix <- function(A_sens,
                              S = diag(ncol(A_sens)),
                              M = diag(ncol(A_sens)),
                              R = diag(ncol(A_sens)),
-                             b = rep(0, ncol(A_sens))) {
+                             b = rep(0, ncol(A_sens)),
+                             ...) {
 
   # Checks for A_sens
   if (!is.matrix(A_sens) || !is.numeric(A_sens)) {
@@ -208,7 +212,9 @@ apply_cal.aclrtm_burst <- function(A_sens,
                                    S = diag(nchar(attr(A_sens, "axes"))),
                                    M = diag(nchar(attr(A_sens, "axes"))),
                                    R = diag(nchar(attr(A_sens, "axes"))),
-                                   b = rep(0, nchar(attr(A_sens, "axes")))) {
+                                   b = rep(0, nchar(attr(A_sens, "axes"))),
+                                   .copy = TRUE,
+                                   ...) {
   # Checks for A_sens
   if (!inherits(A_sens, "aclrtm_burst")) {
     stop("`A_sens` must be an `aclrtm_burst` object", call. = FALSE)
@@ -346,15 +352,17 @@ apply_cal.aclrtm_burst <- function(A_sens,
   }
 
   data_col <- attr(A_sens, "data_col")
+  mats     <- A_sens[[data_col]]
 
+  # computed once
   Tm    <- solve(S) %*% t(solve(M)) %*% R
   shift <- drop(b %*% Tm)
   dimnames(Tm) <- list(NULL, colnames(A_sens[[data_col]][[1]]))
 
-  A_sens[[data_col]] <- lapply(A_sens[[data_col]],
-                               function(m) {
-                                 m %*% Tm - rep(shift, each = nrow(m))
-                               })
+  new_mats <- lapply(mats, function(m) m %*% Tm - rep(shift, each = nrow(m)))
+
+  # assign once
+  set(A_sens, j = data_col, value = list(new_mats))
 
   A_sens
 }
