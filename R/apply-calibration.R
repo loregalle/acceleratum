@@ -349,7 +349,7 @@ apply_cal.aclrtm_burst <- function(A_sens,
 
   Tm    <- solve(S) %*% t(solve(M)) %*% R
   shift <- drop(b %*% Tm)
-  dimnames(Tm) <- list(NULL, colnames(mats[[1]]))
+  dimnames(Tm) <- list(NULL, colnames(A_sens[[data_col]][[1]]))
 
   A_sens[[data_col]] <- lapply(A_sens[[data_col]],
                                function(m) {
