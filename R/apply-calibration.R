@@ -346,15 +346,15 @@ apply_cal.aclrtm_burst <- function(A_sens,
   }
 
   data_col <- attr(A_sens, "data_col")
-  end_burst <- cumsum(sapply(A_sens[[data_col]], nrow))
-  start_burst <- c(1, end_burst[1:(length(end_burst)-1)]+1)
-  mat <- do.call(rbind, A_sens[[data_col]])
-  cn <- colnames(mat)
-  mat <- sweep(mat, 2L, b, "-") %*% solve(S) %*% t(solve(M)) %*% R
-  colnames(mat) <- cn
-  for (i in seq_len(nrow(A_sens))) {
-    A_sens[[data_col]][[i]] <- mat[start_burst[i]:end_burst[i],]
-  }
+
+  Tm    <- solve(S) %*% t(solve(M)) %*% R
+  shift <- drop(b %*% Tm)
+  dimnames(Tm) <- list(NULL, colnames(mats[[1]]))
+
+  A_sens[[data_col]] <- lapply(A_sens[[data_col]],
+                               function(m) {
+                                 m %*% Tm - rep(shift, each = nrow(m))
+                               })
 
   A_sens
 }
