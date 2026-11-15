@@ -381,6 +381,12 @@ rotation_to_align <- function(x,
 #'   where \eqn{X} is the input data matrix.
 #' @export
 apply_rotation <- function(x, R) {
+  UseMethod("apply_rotation")
+}
+
+#' @export
+#' @rdname apply_rotation
+apply_rotation.matrix <- function(x, R) {
   out <- x %*% t(R)
   if (inherits(x, "aclrtm_accelerometry")) {
     new_accelerometry(
@@ -391,4 +397,20 @@ apply_rotation <- function(x, R) {
   } else {
     out
   }
+}
+
+#' @export
+#' @rdname apply_rotation
+apply_rotation.aclrtm_burst <- function(x, R) {
+
+  data_col <- attr(x, "data_col")
+
+  dimnames(Tm) <- list(NULL, colnames(A_sens[[data_col]][[1]]))
+
+  x[[data_col]] <- lapply(x[[data_col]],
+                          function(m) {
+                            m %*% t(R)
+                          })
+
+  x
 }
