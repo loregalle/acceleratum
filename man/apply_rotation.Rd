@@ -2,9 +2,15 @@
 % Please edit documentation in R/rotation.R
 \name{apply_rotation}
 \alias{apply_rotation}
+\alias{apply_rotation.matrix}
+\alias{apply_rotation.aclrtm_burst}
 \title{Rotate data}
 \usage{
 apply_rotation(x, R)
+
+\method{apply_rotation}{matrix}(x, R)
+
+\method{apply_rotation}{aclrtm_burst}(x, R)
 }
 \arguments{
 \item{x}{Input data matrix, rows are observations.}
