@@ -405,7 +405,7 @@ apply_rotation.aclrtm_burst <- function(x, R) {
 
   data_col <- attr(x, "data_col")
 
-  dimnames(Tm) <- list(NULL, colnames(A_sens[[data_col]][[1]]))
+  dimnames(Tm) <- list(NULL, colnames(x[[data_col]][[1]]))
 
   x[[data_col]] <- lapply(x[[data_col]],
                           function(m) {
