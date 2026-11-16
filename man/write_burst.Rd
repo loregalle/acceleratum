@@ -4,7 +4,14 @@
 \alias{write_burst}
 \title{Write an aclrtm_burst object to a delimited file}
 \usage{
-write_burst(x, filename, writer = utils::write.csv, sep = " ", ...)
+write_burst(
+  x,
+  filename,
+  writer = utils::write.csv,
+  burst_sep = " ",
+  fmt = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{An \code{aclrtm_burst} object.}
@@ -15,16 +22,24 @@ write_burst(x, filename, writer = utils::write.csv, sep = " ", ...)
 argument and a file path as its second (e.g. \code{write.csv},
 \code{write.table}, \code{readr::write_csv}, \code{data.table::fwrite}).}
 
-\item{sep}{Separator used when collapsing each burst vector back to a
-string.}
+\item{burst_sep}{Passed to \code{collapse_burst()}.}
+
+\item{fmt}{Passed to \code{collapse_burst()}.}
 
 \item{...}{Additional arguments forwarded to \code{writer}.}
 }
 \value{
-Invisibly returns \code{x}.
+Invisibly returns \code{x} unchanged.
 }
 \description{
-Collapses the burst list-column back to a character vector of
+A convenience wrapper for \code{collapse_burst()} followed by the chosen writer
+for I/O. Collapses the burst list-column back to a character vector of
 separator-delimited strings, then delegates to \code{writer} for the actual I/O.
 All other columns are passed through unchanged.
+When working with large objects, for speed purposes, we recommend operating
+on chunks of \code{x} in parallel using \code{collapse_burst()} and call the writer
+function separately.
+}
+\seealso{
+\code{\link[=collapse_burst]{collapse_burst()}}
 }

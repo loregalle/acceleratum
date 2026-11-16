@@ -189,28 +189,33 @@ plot.aclrtm_burst <- function(x, y, axes = NULL, ...) {
 
 #' Write an aclrtm_burst object to a delimited file
 #'
-#' Collapses the burst list-column back to a character vector of
+#' A convenience wrapper for `collapse_burst()` followed by the chosen writer
+#' for I/O. Collapses the burst list-column back to a character vector of
 #' separator-delimited strings, then delegates to `writer` for the actual I/O.
 #' All other columns are passed through unchanged.
+#' When working with large objects, for speed purposes, we recommend operating
+#' on chunks of `x` in parallel using `collapse_burst()` and call the writer
+#' function separately.
 #'
-#' @param x        An `aclrtm_burst` object.
-#' @param filename Path to the output file.
-#' @param writer   A writing function that accepts a data.frame as its first
-#'                 argument and a file path as its second (e.g. `write.csv`,
-#'                 `write.table`, `readr::write_csv`, `data.table::fwrite`).
-#' @param sep      Separator used when collapsing each burst vector back to a
-#'                 string.
-#' @param ...      Additional arguments forwarded to `writer`.
+#' @param x         An `aclrtm_burst` object.
+#' @param filename  Path to the output file.
+#' @param writer    A writing function that accepts a data.frame as its first
+#'                  argument and a file path as its second (e.g. `write.csv`,
+#'                  `write.table`, `readr::write_csv`, `data.table::fwrite`).
+#' @param burst_sep Passed to `collapse_burst()`.
+#' @param fmt       Passed to `collapse_burst()`.
+#' @param ...       Additional arguments forwarded to `writer`.
 #'
-#' @return Invisibly returns `x`.
+#' @return Invisibly returns `x` unchanged.
+#' @seealso [collapse_burst()]
 #' @export
 write_burst <- function(x, filename,
                         writer = utils::write.csv,
-                        sep = " ", ...) {
+                        burst_sep = " ",
+                        fmt = NULL,
+                        ...) {
 
-  if (!inherits(x, "aclrtm_burst")) {
-    stop("`x` must be an aclrtm_burst object.", call. = FALSE)
-  }
+
   if (!is.character(filename) || length(filename) != 1L) {
     stop("`filename` must be a single character string.", call. = FALSE)
   }
@@ -218,17 +223,46 @@ write_burst <- function(x, filename,
     stop("`writer` must be a function.", call. = FALSE)
   }
 
-  data_col <- attr(x, "data_col")
-
-  # Flatten burst column: each numeric vector → one delimited string
-  out <- as.data.frame(x)
-  class(out) <- "data.frame"
-  out[[data_col]] <- vapply(
-    x[[data_col]],
-    function(v) paste(as.vector(t(v)), collapse = sep),
-    character(1L)
-  )
+  out <- collapse_burst(x, burst_sep, fmt)
 
   writer(out, filename, ...)
   invisible(x)
+}
+
+#' Collapse burst
+#'
+#' Collapses the burst list-column back to a character vector of
+#' separator-delimited strings.
+#' @param x          An `aclrtm_burst` object.
+#' @param burst_sep  Separator used when collapsing each burst vector back to a
+#'                   string.
+#' @param fmt        Optional. Passed to `sprintf()` for values formatting.
+#' @returns Returns an object stripped of its `aclrtm_burst` class and with a
+#' collapsed burst column.
+#' @seealso [write_burst()]
+#' @export
+collapse_burst <- function(x, burst_sep = " ", fmt = NULL) {
+  if (!inherits(x, "aclrtm_burst")) {
+    stop("`x` must be an aclrtm_burst object.", call. = FALSE)
+  }
+
+  data_col <- attr(x, "data_col")
+
+  # Flatten burst column: each numeric vector → one delimited string
+  out <- x
+  class(out) <- class(out)[class(out) != "aclrtm_burst"]
+
+  out[[data_col]] <- vapply(
+    x[[data_col]],
+    function(v) {
+      v <- t(v)
+      if (!is.null(fmt)) {
+        v <- sprintf(fmt, v)
+      }
+      paste(v, collapse = burst_sep)
+    },
+    character(1L)
+  )
+
+  out
 }
