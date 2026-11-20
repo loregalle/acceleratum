@@ -10,8 +10,8 @@
 #' @param start_time \code{NULL} or a length-1 \code{POSIXct} vector.
 #' @returns An object of class \code{c("aclrtm_accelerometry","matrix","array")}.
 new_accelerometry <- function(x,
-                               sampling_rate = NULL,
-                               start_time    = NULL) {
+                              sampling_rate = NULL,
+                              start_time    = NULL) {
   stopifnot(is.matrix(x), is.numeric(x))
 
   structure(
@@ -204,10 +204,10 @@ validate_accelerometry <- function(x) {
 #' @export
 
 accelerometry <- function(x,
-                           axes          = NULL,
-                           sampling_rate = NULL,
-                           start_time    = NULL,
-                           ...) {
+                          axes          = NULL,
+                          sampling_rate = NULL,
+                          start_time    = NULL,
+                          ...) {
   UseMethod("accelerometry")
 }
 
@@ -215,10 +215,10 @@ accelerometry <- function(x,
 #' @rdname accelerometry
 
 accelerometry.numeric <- function(x,
-                                   axes          = NULL,
-                                   sampling_rate = NULL,
-                                   start_time    = NULL,
-                                   ...) {
+                                  axes          = NULL,
+                                  sampling_rate = NULL,
+                                  start_time    = NULL,
+                                  ...) {
 
   # resolve axes
   if (is.null(axes)) {
@@ -248,8 +248,8 @@ accelerometry.numeric <- function(x,
 
   validate_accelerometry(
     new_accelerometry(mat,
-                       sampling_rate = sampling_rate,
-                       start_time    = start_time)
+                      sampling_rate = sampling_rate,
+                      start_time    = start_time)
   )
 }
 
@@ -257,10 +257,10 @@ accelerometry.numeric <- function(x,
 #' @rdname accelerometry
 
 accelerometry.matrix <- function(x,
-                                  axes          = NULL,
-                                  sampling_rate = NULL,
-                                  start_time    = NULL,
-                                  ...) {
+                                 axes          = NULL,
+                                 sampling_rate = NULL,
+                                 start_time    = NULL,
+                                 ...) {
 
   if (!is.numeric(x)) stop("`x` must be a numeric matrix.")
 
@@ -309,8 +309,8 @@ accelerometry.matrix <- function(x,
 
   validate_accelerometry(
     new_accelerometry(x,
-                       sampling_rate = sampling_rate,
-                       start_time    = start_time)
+                      sampling_rate = sampling_rate,
+                      start_time    = start_time)
   )
 }
 
@@ -318,11 +318,11 @@ accelerometry.matrix <- function(x,
 #' @rdname accelerometry
 
 accelerometry.data.frame <- function(x,
-                                      axes          = NULL,
-                                      sampling_rate = NULL,
-                                      start_time    = NULL,
-                                      ts_col        = NULL,
-                                      ...) {
+                                     axes          = NULL,
+                                     sampling_rate = NULL,
+                                     start_time    = NULL,
+                                     ts_col        = NULL,
+                                     ...) {
 
   if (!is.data.frame(x)) stop("`x` must be a data frame.")
 
@@ -440,7 +440,7 @@ accelerometry.data.frame <- function(x,
 
   # delegate to matrix method for column-name inference / validation
   accelerometry.matrix(mat,
-                        axes          = axes,
-                        sampling_rate = sampling_rate,
-                        start_time    = start_time)
+                       axes          = axes,
+                       sampling_rate = sampling_rate,
+                       start_time    = start_time)
 }

@@ -69,4 +69,9 @@ object alone.  The reconstructed burst object will have uniformly spaced
 timestamps and equal-sized bursts (except possibly the last), regardless
 of the original structure.
 All additional columns present in the original object will also be lost.
+For a function that attempts to lose as little data as possible,
+please use \code{\link{reburst}}.
+}
+\seealso{
+\code{\link[=reburst]{reburst()}}, \code{\link[=burst_to_accelerometry]{burst_to_accelerometry()}}
 }

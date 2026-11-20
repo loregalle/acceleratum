@@ -38,4 +38,9 @@ Individual burst timestamps and variable burst sizes are not retained in
 the accelerometry representation, which stores only \code{start_time} and
 \code{sampling_rate} and assumes a regular sampling interval throughout.
 All additional columns present in the original object will also be lost.
+For a function that attempts to lose as little data as possible,
+please use \code{\link{reburst}}.
+}
+\seealso{
+\code{\link[=reburst]{reburst()}}, \code{\link[=accelerometry_to_burst]{accelerometry_to_burst()}}
 }

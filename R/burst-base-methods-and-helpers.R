@@ -266,3 +266,173 @@ collapse_burst <- function(x, burst_sep = " ", fmt = NULL) {
 
   out
 }
+
+#' Re-cut a aclrtm_burst object
+#'
+#' From a `aclrtm_burst` object, offsets a new object of the same class and/or
+#' changes burst length.
+#'
+#' @param x             A aclrtm_burst object (attribute `ts_col` must be set).
+#' @param length        New burst duration in seconds.
+#' @param sampling_rate Sampling rate in Hz. If `NULL` (default), it is
+#'                      estimated as the median of rows / time-to-next-burst.
+#' @param offset        Either a numeric value that offsets, in seconds,
+#'                      the start of the first bin. Can be a `POSIXct` value,
+#'                      in which case the first bin will be offset to this
+#'                      value.
+#' @param min_fill      Bins holding fewer than
+#'                      `min_fill * length * sampling_rate` rows
+#'                      (e.g. at gaps or the end of the data) are dropped.
+#' @param gap_tol       A burst whose distance to the next one exceeds
+#'                      `gap_tol * median distance` is treated as followed by
+#'                      a gap.
+#'
+#' @details
+#' Akin to chaining `b2a()` and `a2b()` with the difference that
+#' this function will interpolate timestamps between bursts rather than lose
+#' that information entirely. Additionally, columns that have a single value
+#' (e.g. a recording ID for the data) will be retained in the output.
+#' Columns with more than 1 value cannot be assigned to the output rows
+#' unequivocally and will be dropped with a warning.
+#'
+#' @seealso [burst()], [a2b()], [b2a()]
+#'
+#' @return A aclrtm_burst object with columns `ts_col` and `data_col` and any
+#' additional column with unique value.
+#' @export
+reburst <- function(x,
+                    length,
+                    sampling_rate = NULL,
+                    offset = 0,
+                    min_fill = 0.9,
+                    gap_tol = 1.5) {
+  stopifnot(inherits(x, "aclrtm_burst"),
+            is.numeric(length), length(length) == 1L, length > 0)
+
+  data_col <- attr(x, "data_col")
+  ts_col   <- attr(x, "ts_col")
+  axes     <- attr(x, "axes")
+  if (is.null(ts_col)) stop("`x` has no `ts_col`; cannot reburst.", call. = FALSE)
+
+  # columns other than ts/data: keep those holding a single value, drop the rest
+  other_cols <- setdiff(names(x), c(ts_col, data_col))
+  is_const   <- vapply(other_cols,
+                       function(col) length(unique(x[[col]])) == 1L,
+                       logical(1L))
+  const_cols <- other_cols[is_const]
+  lost_cols  <- other_cols[!is_const]
+
+  if (length(lost_cols) > 0L) {
+    warning(sprintf(
+      "Column%s %s hold%s more than one value and cannot be assigned to the new bursts; dropped.",
+      if (length(lost_cols) == 1L) "" else "s",
+      paste0("`", lost_cols, "`", collapse = ", "),
+      if (length(lost_cols) == 1L) "s" else ""
+    ), call. = FALSE)
+  }
+
+  ts_in    <- x[[ts_col]]
+  is_posix <- inherits(ts_in, "POSIXct")
+  tz       <- if (is_posix) attr(ts_in, "tzone") else NULL
+  t        <- as.numeric(ts_in)
+  mats     <- x[[data_col]]
+
+  m <- length(t)
+  n <- vapply(mats, nrow, integer(1L))
+
+  # distance to next burst (NA for the last one)
+  dur <- c(diff(t), NA_real_)
+
+  if (is.null(sampling_rate)) {
+    if (m < 2L) {
+      stop("Need at least two bursts to estimate `sampling_rate`.",
+           call. = FALSE)
+    }
+    sampling_rate <- median(n[-m] / dur[-m])
+  }
+
+  # gaps: only transitions between bursts count (the last burst has no successor)
+  typ      <- median(dur, na.rm = TRUE)
+  gap      <- is.na(dur) | dur > gap_tol * typ
+  n_gaps   <- sum(gap[-m])
+
+  if (n_gaps > 0L) {
+    warning(sprintf(
+      "%d gap%s identified between bursts (distance to next burst > %.2f x the median of %.3f s).",
+      n_gaps, if (n_gaps == 1L) "" else "s", gap_tol, typ
+    ), call. = FALSE)
+  }
+
+  # a bin can only hold a constant number of rows if length * sampling_rate
+  # is a whole number
+  rows_per_bin <- length * sampling_rate
+  if (abs(rows_per_bin - round(rows_per_bin)) > 1e-8) {
+    warning(sprintf(
+      "`length` = %g s at `sampling_rate` = %g Hz gives %.3f rows per burst; bursts will not have a regular number of rows and bins below the `min_fill` threshold will be dropped.",
+      length, sampling_rate, rows_per_bin
+    ), call. = FALSE)
+  }
+
+  # row spacing within each burst: interpolate to the next burst,
+  # fall back on the nominal rate across gaps / for the last burst
+  dt <- ifelse(gap, 1 / sampling_rate, dur / n)
+
+  # interpolated timestamp for every row
+  rt <- rep(t, n) + (sequence(n) - 1L) * rep(dt, n)
+
+  # bin offset
+  if (inherits(offset, "POSIXct")) {
+    if (!is_posix) {
+      stop("`offset` is POSIXct but the `ts_col` timestamps are not.",
+           call. = FALSE)
+    }
+    t0 <- as.numeric(offset)
+  } else if (is.numeric(offset) && length(offset) == 1L && is.finite(offset)) {
+    t0 <- t[1L] + offset
+  } else {
+    stop("`offset` must be a single number (seconds relative to the first ",
+         "burst) or a POSIXct.", call. = FALSE)
+  }
+
+  # bin assignment
+  bin <- floor((rt - t0) / length + 1e-9)
+
+  big    <- do.call(rbind, mats)
+  starts <- c(1L, which(diff(bin) != 0L) + 1L)
+  ends   <- c(starts[-1L] - 1L, length(bin))
+
+  keep <- (ends - starts + 1L) >= min_fill * rows_per_bin
+  # the last bin ends the data rather than a gap, so a short one is expected
+  keep[length(keep)] <- TRUE
+
+  n_dropped <- sum(!keep)
+  if (n_dropped > 0L) {
+    warning(sprintf(
+      "%d of %d bins dropped for holding fewer than %.0f%% of the expected %.2f rows.",
+      n_dropped, length(keep), 100 * min_fill, rows_per_bin
+    ), call. = FALSE)
+  }
+
+  starts <- starts[keep]
+  ends   <- ends[keep]
+  if (!length(starts)) stop("No complete bins produced.", call. = FALSE)
+
+  new_mats <- Map(function(s, e) big[s:e, , drop = FALSE], starts, ends)
+  new_ts   <- t0 + bin[starts] * length
+  if (is_posix) new_ts <- .POSIXct(new_ts, tz = tz)
+
+  out <- data.frame(new_ts)
+  names(out) <- ts_col
+  out[[data_col]] <- new_mats
+
+  # re-attach single-valued columns
+  n_out <- nrow(out)
+  for (col in const_cols) {
+    out[[col]] <- x[[col]][rep(1L, n_out)]
+  }
+
+  # restore the input column order (minus any dropped columns)
+  out <- out[names(x)[names(x) %in% names(out)]]
+
+  new_burst(out, data_col = data_col, axes = axes, ts_col = ts_col)
+}

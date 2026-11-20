@@ -39,8 +39,11 @@
 #'   timestamps and equal-sized bursts (except possibly the last), regardless
 #'   of the original structure.
 #'   All additional columns present in the original object will also be lost.
+#'   For a function that attempts to lose as little data as possible,
+#'   please use \code{\link{reburst}}.
 #'
 #' @return A \code{aclrtm_burst} object.
+#' @seealso [reburst()], [burst_to_accelerometry()]
 #' @export
 accelerometry_to_burst <- function(x,
                                     burst_length = NULL,
@@ -198,8 +201,11 @@ a2b <- function(x,
 #'   the accelerometry representation, which stores only \code{start_time} and
 #'   \code{sampling_rate} and assumes a regular sampling interval throughout.
 #'   All additional columns present in the original object will also be lost.
+#'   For a function that attempts to lose as little data as possible,
+#'   please use \code{\link{reburst}}.
 #'
 #' @return An \code{aclrtm_accelerometry} object.
+#' @seealso [reburst()], [accelerometry_to_burst()]
 #' @export
 burst_to_accelerometry <- function(x,
                                     sampling_rate = NULL,

@@ -21,3 +21,22 @@ add_ts_col <- function(df, ts) {
   df$ts <- ts
   df
 }
+
+make_df <- function(rows = rep(40L, 12), ts = NULL, dur = 5) {
+  m <- length(rows)
+  if (is.null(ts)) ts <- (seq_len(m) - 1) * dur
+  first <- c(0, cumsum(rows)[-m])
+  mats <- unname(Map(function(f, r) {
+    k <- f + seq_len(r) - 1
+    cbind(x = k, y = 2 * k, z = 3 * k)
+  }, first, rows))
+  df <- data.frame(timestamp = ts)
+  df$accelerations_raw <- mats
+  df
+}
+
+make_burst <- function(...) {
+  burst(make_df(...), "accelerations_raw", "xyz", "timestamp")
+}
+
+n_rows <- function(b) vapply(b$accelerations_raw, nrow, integer(1L))
